@@ -12,6 +12,7 @@ import (
 	"boilerplate-be/internal/module/auth/entity"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type authRepository struct {
@@ -39,7 +40,10 @@ func (r *authRepository) CreateUser(user *entity.User) error {
 
 	_, err := r.db.Exec(query, user.ID, user.Name, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		return errors.Wrap(err, errors.ServerCantInsertUserData)
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code.Name() == "unique_violation" {
+			return errors.New(errors.EmailExists)
+		}
+		return errors.Wrap(err, errors.DatabaseInsertFailed)
 	}
 
 	return nil
@@ -60,9 +64,9 @@ func (r *authRepository) GetUserByEmail(email string) (*entity.User, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.ErrNoDataFound
+			return nil, errors.New(errors.AccountNotFound)
 		}
-		return nil, errors.Wrap(err, errors.ServerCantScanUserData)
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
 	}
 
 	return user, nil
@@ -83,9 +87,9 @@ func (r *authRepository) GetUserByID(id string) (*entity.User, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.ErrNoDataFound
+			return nil, errors.New(errors.AccountNotFound)
 		}
-		return nil, errors.Wrap(err, errors.ServerCantScanUserData)
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
 	}
 
 	return user, nil
@@ -102,16 +106,16 @@ func (r *authRepository) UpdateUser(user *entity.User) error {
 
 	result, err := r.db.Exec(query, user.ID, user.Name, user.UpdatedAt)
 	if err != nil {
-		return errors.Wrap(err, errors.ServerCantInsertUserData)
+		return errors.Wrap(err, errors.DatabaseUpdateFailed)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return errors.Wrap(err, errors.ServerError)
+		return errors.Wrap(err, errors.DatabaseError)
 	}
 
 	if rowsAffected == 0 {
-		return errors.ErrNoDataFound
+		return errors.New(errors.AccountNotFound)
 	}
 
 	return nil
@@ -122,7 +126,7 @@ func (r *authRepository) StoreRefreshToken(userID, tokenID string) error {
 	defer cancel()
 
 	key := fmt.Sprintf("refresh_token:%s:%s", userID, tokenID)
-	return r.redisClient.SetWithTTL(ctx, key, "1", 168*time.Hour) // 7 days
+	return r.redisClient.SetWithTTL(ctx, key, "1", 168*time.Hour)
 }
 
 func (r *authRepository) ValidateRefreshToken(userID, tokenID string) (bool, error) {

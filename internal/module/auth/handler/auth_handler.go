@@ -25,16 +25,14 @@ func NewAuthHandler(authUseCase domain.AuthUseCase) *AuthHandler {
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req dto.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.BodyRequestError, "id"),
-		))
+		appErr := errors.New(errors.InvalidRequestBody)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
-		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
-		))
+		validationErrors := lib.FormatValidationErrorForResponseBilingual(err)
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	user, accessToken, refreshToken, err := h.authUseCase.Register(req.Email, req.Password, req.Name)
@@ -42,9 +40,8 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	authResponse := dto.AuthResponse{
@@ -70,16 +67,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req dto.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.BodyRequestError, "id"),
-		))
+		appErr := errors.New(errors.InvalidRequestBody)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
-		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
-		))
+		validationErrors := lib.FormatValidationErrorForResponseBilingual(err)
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	accessToken, refreshToken, err := h.authUseCase.Login(req.Email, req.Password)
@@ -87,9 +82,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	tokenResponse := dto.RefreshTokenResponse{
@@ -108,15 +102,15 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req dto.RefreshTokenRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.BodyRequestError, "id"),
+			c, errors.New(errors.InvalidRequestBody),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
-		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
-		))
+		validationErrors := lib.FormatValidationErrorForResponseBilingual(err)
+		// Panggil error code langsung dari package 'errors'
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	accessToken, refreshToken, err := h.authUseCase.RefreshToken(req.RefreshToken)
@@ -124,9 +118,8 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	tokenResponse := dto.RefreshTokenResponse{
@@ -149,9 +142,8 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	return c.JSON(response.CreateSuccessResponse(
@@ -166,9 +158,8 @@ func (h *AuthHandler) Profile(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	userResponse := dto.UserResponse{
@@ -191,15 +182,15 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	var req dto.UpdateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.BodyRequestError, "id"),
+			c, errors.New(errors.InvalidRequestBody),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
-		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
-			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
-		))
+		validationErrors := lib.FormatValidationErrorForResponseBilingual(err)
+		// Panggil error code langsung dari package 'errors'
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	user, err := h.authUseCase.UpdateProfile(userID, req.Name)
@@ -207,9 +198,8 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
-			c, errors.New(errors.ServerError, "id"),
-		))
+		appErr := errors.New(errors.InternalServerError)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 
 	userResponse := dto.UserResponse{

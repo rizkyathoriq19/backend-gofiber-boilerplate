@@ -27,19 +27,16 @@ func NewAuthUseCase(authRepo domain.AuthRepository, jwtManager *token.JWTManager
 }
 
 func (u *authUseCase) Register(email, password, name string) (*entity.User, string, string, error) {
-	// Check if user already exists
 	_, err := u.authRepo.GetUserByEmail(email)
 	if err == nil {
-		return nil, "", "", errors.ErrEmailHasBeenUsed
+		return nil, "", "", errors.New(errors.EmailExists)
 	}
 
-	// Hash password
 	hashedPassword, err := helper.HashPassword(password)
 	if err != nil {
-		return nil, "", "", errors.Wrap(err, errors.ServerErrorCantGeneratePassword)
+		return nil, "", "", errors.Wrap(err, errors.PasswordHashFailed)
 	}
 
-	// Create user
 	user := &entity.User{
 		Name:     name,
 		Email:    email,
@@ -50,28 +47,24 @@ func (u *authUseCase) Register(email, password, name string) (*entity.User, stri
 		return nil, "", "", err
 	}
 
-	// Generate token pair
 	accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		return nil, "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+		return nil, "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	// Validate refresh token to get token ID for storage
 	refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
 	if err != nil {
-		return nil, "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+		return nil, "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	// Store refresh token
 	if err := u.authRepo.StoreRefreshToken(user.ID, refreshClaims.ID); err != nil {
-		return nil, "", "", errors.Wrap(err, errors.ServerErrorRedisCantStore)
+		return nil, "", "", errors.Wrap(err, errors.CacheStoreFailed)
 	}
 
 	return user, accessToken, refreshToken, nil
 }
 
 func (u *authUseCase) Login(email, password string) (string, string, error) {
-    // ambil user
     user, err := u.authRepo.GetUserByEmail(email)
     if err != nil {
         if appErr, ok := errors.IsAppError(err); ok {
@@ -80,78 +73,68 @@ func (u *authUseCase) Login(email, password string) (string, string, error) {
         return "", "", err
     }
 
-    // cek password
     if err := helper.CheckPassword(user.Password, password); err != nil {
-        return "", "", errors.ErrInvalidCredential
+        return "", "", errors.New(errors.InvalidCredentials)
     }
 
-    // generate token
     accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
     if err != nil {
-        return "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+        return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
     }
 
-    // validate & store refresh token
     refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
     if err != nil {
-        return "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+        return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
     }
     if err := u.authRepo.StoreRefreshToken(user.ID, refreshClaims.ID); err != nil {
-        return "", "", errors.Wrap(err, errors.ServerErrorRedisCantStore)
+        return "", "", errors.Wrap(err, errors.CacheStoreFailed)
     }
 
     return accessToken, refreshToken, nil
 }
 
 func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, error) {
-	// Validate refresh token
 	claims, err := u.jwtManager.ValidateToken(refreshTokenString)
 	if err != nil {
-		return "", "", errors.ErrInvalidToken
+		return "", "", errors.New(errors.InvalidToken)
 	}
 
-	// Check if token type is refresh
 	if claims.TokenType != "refresh" {
-		return "", "", errors.ErrInvalidToken
+		return "", "", errors.New(errors.InvalidToken)
 	}
 
-	// Check if refresh token exists in Redis
 	exists, err := u.authRepo.ValidateRefreshToken(claims.UserID, claims.ID)
 	if err != nil {
-		return "", "", errors.Wrap(err, errors.ServerErrorRedis)
+		return "", "", errors.Wrap(err, errors.CacheError)
 	}
 	if !exists {
-		return "", "", errors.ErrInvalidToken
+		return "", "", errors.New(errors.InvalidToken)
 	}
 
-	// Get user details
 	user, err := u.authRepo.GetUserByID(claims.UserID)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return "", "", appErr
 		}
-		return "", "", errors.Wrap(err, errors.ServerCantScanUserData)
+		return "", "", errors.Wrap(err, errors.DatabaseScanFailed)
 	}
 
-	// Generate new token pair
 	newAccessToken, newRefreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
 	if err != nil {
-		return "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	// Revoke old refresh token
 	if err := u.authRepo.RevokeRefreshToken(claims.UserID, claims.ID); err != nil {
-		return "", "", errors.Wrap(err, errors.ServerErrorRedis)
+		return "", "", errors.Wrap(err, errors.CacheError)
 	}
 
-	// Store new refresh token
 	newRefreshClaims, err := u.jwtManager.ValidateToken(newRefreshToken)
 	if err != nil {
-		return "", "", errors.Wrap(err, errors.ServerErrorFailedGenerateToken)
+		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
 	if err := u.authRepo.StoreRefreshToken(user.ID, newRefreshClaims.ID); err != nil {
-		return "", "", errors.Wrap(err, errors.ServerErrorRedisCantStore)
+		return "", "", errors.Wrap(err, errors.CacheStoreFailed)
 	}
 
 	return newAccessToken, newRefreshToken, nil
@@ -161,15 +144,14 @@ func (u *authUseCase) Logout(userID, tokenID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Blacklist the current access token
 	if err := u.jwtManager.BlacklistToken(ctx, u.redisClient, tokenID, 24*time.Hour); err != nil {
-		return errors.Wrap(err, errors.ServerErrorRedisCantStore)
+		return errors.Wrap(err, errors.CacheStoreFailed)
 	}
 
 	// Revoke all refresh tokens for the user
 	// Note: This is a simple implementation. In production, you might want to be more selective
 	if err := u.authRepo.RevokeRefreshToken(userID, "*"); err != nil {
-		return errors.Wrap(err, errors.ServerErrorRedis)
+		return errors.Wrap(err, errors.CacheError)
 	}
 
 	return nil
@@ -180,16 +162,13 @@ func (u *authUseCase) GetProfile(userID string) (*entity.User, error) {
 }
 
 func (u *authUseCase) UpdateProfile(userID, name string) (*entity.User, error) {
-	// Get current user
 	user, err := u.authRepo.GetUserByID(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update user data
 	user.Name = name
 
-	// Update in repository
 	if err := u.authRepo.UpdateUser(user); err != nil {
 		return nil, err
 	}

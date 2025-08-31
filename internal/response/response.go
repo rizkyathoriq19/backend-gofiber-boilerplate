@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"boilerplate-be/internal/infrastructure/errors"
+	"boilerplate-be/internal/infrastructure/lib"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,6 +18,11 @@ type BilingualMessage struct {
 type ValidationError struct {
 	Field   string           `json:"field"`
 	Message BilingualMessage `json:"message"`
+}
+
+type FormattedValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 type ErrorResponseStruct struct {
@@ -48,9 +54,6 @@ type PaginatedResponseStruct struct {
 func getLanguageFromHeader(c *fiber.Ctx) string {
 	acceptLanguage := c.Get("Accept-Language", "id")
 	
-	if strings.Contains(acceptLanguage, "id") {
-		return "id"
-	}
 	if strings.Contains(acceptLanguage, "en") {
 		return "en"
 	}
@@ -67,22 +70,32 @@ func getMessageByLanguage(messageID, messageEN, language string) string {
 
 func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) ErrorResponseStruct {
 	lang := getLanguageFromHeader(c)
-	
+
 	errorResp := ErrorResponseStruct{
-		Success:    false,
-		Code:       err.StatusCode,
-		Message:    getMessageByLanguage(err.Code.MessageID(), err.Code.MessageEN(), lang),
-		ErrorCode:  err.Code.Value(),
-		Timestamp:  time.Now(),
+		Success:   false,
+		Code:      err.StatusCode,
+		Message:   getMessageByLanguage(err.Code.MessageID(), err.Code.MessageEN(), lang),
+		ErrorCode: err.Code.Value(),
+		Timestamp: time.Now(),
 	}
-	
-	// Handle validation errors
-	if validationDetails, ok := err.Details.([]errors.ValidationErrorDetails); ok {
-		errorResp.Errors = convertToValidationErrors(validationDetails, lang)
+
+	if validationDetails, ok := err.Details.([]lib.ValidationErrorDetailsBilingual); ok {
+		var formattedErrors []FormattedValidationError
+		for _, detail := range validationDetails {
+			message := detail.Message.ID
+			if lang == "en" {
+				message = detail.Message.EN
+			}
+			formattedErrors = append(formattedErrors, FormattedValidationError{
+				Field:   detail.Field,
+				Message: message,
+			})
+		}
+		errorResp.Errors = formattedErrors
 	} else {
 		errorResp.Errors = nil
 	}
-	
+
 	return errorResp
 }
 
@@ -119,44 +132,4 @@ func CreatePaginatedResponse(c *fiber.Ctx, messageID, messageEN string, data int
 		Meta:      meta,
 		Timestamp: time.Now(),
 	}
-}
-
-func convertToValidationErrors(details []errors.ValidationErrorDetails, _ string) []ValidationError {
-	var validationErrors []ValidationError
-	
-	for _, detail := range details {
-		validationError := ValidationError{
-			Field: detail.Field,
-			Message: BilingualMessage{
-				ID: detail.Message,
-				EN: getEnglishValidationMessage(detail.Message),
-			},
-		}
-		validationErrors = append(validationErrors, validationError)
-	}
-	
-	return validationErrors
-}
-
-func getEnglishValidationMessage(idMessage string) string {
-	messageMap := map[string]string{
-		"Format email tidak valid":          "Invalid email format",
-		"Password minimal 8 karakter":       "Password must be at least 8 characters",
-		"Field harus diisi":                 "Field is required",
-		"Data tidak valid":                  "Invalid data",
-		"Format tidak sesuai":               "Invalid format",
-		"Harus berupa angka":                "Must be a number",
-		"Harus berupa teks":                 "Must be text",
-		"Nilainya terlalu pendek":           "Value is too short",
-		"Nilainya terlalu panjang":          "Value is too long",
-		"Tidak sesuai dengan konfirmasi":    "Does not match confirmation",
-		"Email sudah digunakan":             "Email has already been used",
-		"Nama pengguna sudah digunakan":     "Username has already been used",
-	}
-	
-	if enMessage, exists := messageMap[idMessage]; exists {
-		return enMessage
-	}
-	
-	return idMessage
 }

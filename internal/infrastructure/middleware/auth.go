@@ -18,29 +18,29 @@ func AuthMiddleware(jwtManager *token.JWTManager, redisClient *redis.Client) fib
 		// Get authorization header
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrUnauthorized))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.Unauthorized)))
 		}
 
 		// Check if bearer token
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrInvalidToken))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
 		// Extract token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		if tokenString == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrInvalidToken))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
 		// Validate token
 		claims, err := jwtManager.ValidateToken(tokenString)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrInvalidToken))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
 		// Check if token is access token
 		if claims.TokenType != "access" {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrInvalidToken))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
 		// Check if token is blacklisted
@@ -52,7 +52,7 @@ func AuthMiddleware(jwtManager *token.JWTManager, redisClient *redis.Client) fib
 			// If Redis is down, log the error but allow the request to proceed
 			// In production, you might want to handle this differently
 		} else if isBlacklisted {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.ErrInvalidToken))
+			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
 		// Set user context

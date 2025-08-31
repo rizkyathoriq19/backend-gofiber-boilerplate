@@ -36,5 +36,5 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 	}
 	
 	// Default error response
-	return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.ErrServerError))
+	return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.New(errors.InternalServerError)))
 }
