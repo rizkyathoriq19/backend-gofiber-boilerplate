@@ -32,9 +32,9 @@ func LoggerMiddleware(logger *logrus.Logger) fiber.Handler {
 
 func ErrorHandler(c *fiber.Ctx, err error) error {
 	if appErr, ok := errors.IsAppError(err); ok {
-		return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
 	
 	// Default error response
-	return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(errors.ErrServerError))
+	return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.ErrServerError))
 }

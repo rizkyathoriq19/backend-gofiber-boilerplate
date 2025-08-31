@@ -25,25 +25,25 @@ func NewAuthHandler(authUseCase domain.AuthUseCase) *AuthHandler {
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var req dto.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.New(errors.BodyRequestError, "en"), // Language parameter masih diperlukan untuk AppError internal
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.BodyRequestError, "id"),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
 		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.NewWithDetails(errors.ValidationError, validationErrors, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
 		))
 	}
 
 	user, accessToken, refreshToken, err := h.authUseCase.Register(req.Email, req.Password, req.Name)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
@@ -62,35 +62,33 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		ExpiresIn:    int64(24 * time.Hour / time.Second),
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response.SuccessResponse(
-		response.MsgRegisterSuccess.ID,
-		response.MsgRegisterSuccess.EN,
-		authResponse,
+	return c.Status(fiber.StatusCreated).JSON(response.CreateSuccessResponse(
+		c, response.MsgDataCreated.ID, response.MsgDataCreated.EN, authResponse, fiber.StatusCreated,
 	))
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var req dto.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.New(errors.BodyRequestError, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.BodyRequestError, "id"),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
 		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.NewWithDetails(errors.ValidationError, validationErrors, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
 		))
 	}
 
 	accessToken, refreshToken, err := h.authUseCase.Login(req.Email, req.Password)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
@@ -101,35 +99,33 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		ExpiresIn:    int64(24 * time.Hour / time.Second),
 	}
 
-	return c.JSON(response.SuccessResponse(
-		response.MsgLoginSuccess.ID,
-		response.MsgLoginSuccess.EN,
-		tokenResponse,
+	return c.JSON(response.CreateSuccessResponse(
+		c, response.MsgLoginSuccess.ID, response.MsgLoginSuccess.EN, tokenResponse,
 	))
 }
 
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	var req dto.RefreshTokenRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.New(errors.BodyRequestError, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.BodyRequestError, "id"),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
 		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.NewWithDetails(errors.ValidationError, validationErrors, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
 		))
 	}
 
 	accessToken, refreshToken, err := h.authUseCase.RefreshToken(req.RefreshToken)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
@@ -140,10 +136,8 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		ExpiresIn:    int64(24 * time.Hour / time.Second),
 	}
 
-	return c.JSON(response.SuccessResponse(
-		response.MsgTokenRefresh.ID,
-		response.MsgTokenRefresh.EN,
-		tokenResponse,
+	return c.JSON(response.CreateSuccessResponse(
+		c, response.MsgTokenRefresh.ID, response.MsgTokenRefresh.EN, tokenResponse,
 	))
 }
 
@@ -153,18 +147,15 @@ func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 
 	if err := h.authUseCase.Logout(userID, tokenID); err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
-	return c.JSON(response.SuccessResponse(
-		response.MsgLogoutSuccess.ID,
-		response.MsgLogoutSuccess.EN,
-		nil,
-	))
+	return c.JSON(response.CreateSuccessResponse(
+		c, response.MsgLogoutSuccess.ID, response.MsgLogoutSuccess.EN, nil,))
 }
 
 func (h *AuthHandler) Profile(c *fiber.Ctx) error {
@@ -173,10 +164,10 @@ func (h *AuthHandler) Profile(c *fiber.Ctx) error {
 	user, err := h.authUseCase.GetProfile(userID)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
@@ -189,10 +180,8 @@ func (h *AuthHandler) Profile(c *fiber.Ctx) error {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	return c.JSON(response.SuccessResponse(
-		response.MsgProfileRetrieve.ID,
-		response.MsgProfileRetrieve.EN,
-		userResponse,
+	return c.JSON(response.CreateSuccessResponse(
+		c, response.MsgProfileRetrieve.ID, response.MsgProfileRetrieve.EN, userResponse,
 	))
 }
 
@@ -201,25 +190,25 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 
 	var req dto.UpdateProfileRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.New(errors.BodyRequestError, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.BodyRequestError, "id"),
 		))
 	}
 
 	if err := lib.ValidateStruct(req); err != nil {
 		validationErrors := lib.FormatValidationError(err)
-		return c.Status(fiber.StatusBadRequest).JSON(response.ErrorResponse(
-			errors.NewWithDetails(errors.ValidationError, validationErrors, "en"),
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(
+			c, errors.NewWithDetails(errors.ValidationError, validationErrors, "id"),
 		))
 	}
 
 	user, err := h.authUseCase.UpdateProfile(userID, req.Name)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
-			return c.Status(appErr.StatusCode).JSON(response.ErrorResponse(appErr))
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(response.ErrorResponse(
-			errors.New(errors.ServerError, "en"),
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(
+			c, errors.New(errors.ServerError, "id"),
 		))
 	}
 
@@ -232,9 +221,7 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	return c.JSON(response.SuccessResponse(
-		response.MsgProfileUpdate.ID,
-		response.MsgProfileUpdate.EN,
-		userResponse,
+	return c.JSON(response.CreateSuccessResponse(
+		c, response.MsgProfileUpdate.ID, response.MsgProfileUpdate.EN, userResponse,
 	))
 }

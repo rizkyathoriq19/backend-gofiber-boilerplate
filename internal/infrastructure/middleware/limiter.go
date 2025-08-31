@@ -37,8 +37,8 @@ func RateLimitMiddleware(redisClient *redis.Client, cfg *config.Config) fiber.Ha
 
 		// Check if limit exceeded
 		if current >= int64(cfg.RateLimit.Max) {
-			rateLimitError := errors.New(errors.RateLimitExceeded, "en")
-			return c.Status(rateLimitError.StatusCode).JSON(response.ErrorResponse(rateLimitError))
+			rateLimitError := errors.New(errors.RateLimitExceeded)
+			return c.Status(rateLimitError.StatusCode).JSON(response.CreateErrorResponse(c, rateLimitError))
 		}
 
 		// Increment counter
@@ -86,8 +86,8 @@ func EndpointRateLimitMiddleware(redisClient *redis.Client, maxRequests int, win
 
 		// Check limit
 		if current >= int64(maxRequests) {
-			rateLimitError := errors.New(errors.RateLimitExceeded, "en")
-			return c.Status(rateLimitError.StatusCode).JSON(response.ErrorResponse(rateLimitError))
+			rateLimitError := errors.New(errors.RateLimitExceeded)
+			return c.Status(rateLimitError.StatusCode).JSON(response.CreateErrorResponse(c, rateLimitError))
 		}
 
 		// Increment

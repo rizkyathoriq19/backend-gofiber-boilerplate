@@ -1,9 +1,12 @@
 package response
 
 import (
+	"strings"
 	"time"
 
 	"boilerplate-be/internal/infrastructure/errors"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type BilingualMessage struct {
@@ -11,76 +14,130 @@ type BilingualMessage struct {
 	EN string `json:"en"`
 }
 
-type ErrorDetail struct {
-	Code    int         `json:"code"`
-	Details interface{} `json:"details"`
+type ValidationError struct {
+	Field   string           `json:"field"`
+	Message BilingualMessage `json:"message"`
 }
 
-type Response struct {
-	Success   bool            `json:"success"`
-	Message   BilingualMessage `json:"message"`
-	Data      interface{}     `json:"data,omitempty"`
-	Error     *ErrorDetail    `json:"error,omitempty"`
-	Timestamp time.Time       `json:"timestamp"`
+type ErrorResponseStruct struct {
+	Success    bool         `json:"success"`
+	Code       int          `json:"code"`        
+	Message    string       `json:"message"`     
+	ErrorCode  int          `json:"error_code"`  
+	Errors     interface{}  `json:"errors"`      
+	Timestamp  time.Time    `json:"timestamp"`
 }
 
-// SuccessResponse dengan message bilingual
-func SuccessResponse(messageID, messageEN string, data interface{}) Response {
-	return Response{
-		Success: true,
-		Message: BilingualMessage{
-			ID: messageID,
-			EN: messageEN,
-		},
+type SuccessResponseStruct struct {
+	Success   bool        `json:"success"`
+	Code      int         `json:"code"`       
+	Message   string      `json:"message"`    
+	Data      interface{} `json:"data,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+type PaginatedResponseStruct struct {
+	Success   bool        `json:"success"`
+	Code      int         `json:"code"`       
+	Message   string      `json:"message"`    
+	Data      interface{} `json:"data"`
+	Meta      interface{} `json:"meta"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+func getLanguageFromHeader(c *fiber.Ctx) string {
+	acceptLanguage := c.Get("Accept-Language", "id")
+	
+	if strings.Contains(acceptLanguage, "id") {
+		return "id"
+	}
+	if strings.Contains(acceptLanguage, "en") {
+		return "en"
+	}
+	
+	return "id"
+}
+
+func getMessageByLanguage(messageID, messageEN, language string) string {
+	if language == "en" {
+		return messageEN
+	}
+	return messageID
+}
+
+func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) ErrorResponseStruct {
+	lang := getLanguageFromHeader(c)
+	
+	errorResp := ErrorResponseStruct{
+		Success:    false,
+		Code:       err.StatusCode,
+		Message:    getMessageByLanguage(err.Code.MessageID(), err.Code.MessageEN(), lang),
+		ErrorCode:  err.Code.Value(),
+		Timestamp:  time.Now(),
+	}
+	
+	// Handle validation errors
+	if validationDetails, ok := err.Details.([]errors.ValidationErrorDetails); ok {
+		errorResp.Errors = convertToValidationErrors(validationDetails, lang)
+	} else {
+		errorResp.Errors = nil
+	}
+	
+	return errorResp
+}
+
+func CreateSuccessResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, statusCode ...int) SuccessResponseStruct {
+	lang := getLanguageFromHeader(c)
+	
+	code := fiber.StatusOK
+	if len(statusCode) > 0 {
+		code = statusCode[0]
+	}
+	
+	return SuccessResponseStruct{
+		Success:   true,
+		Code:      code,
+		Message:   getMessageByLanguage(messageID, messageEN, lang),
 		Data:      data,
 		Timestamp: time.Now(),
 	}
 }
 
-// ErrorResponse dengan format bilingual
-func ErrorResponse(err errors.AppError) Response {
-	errorDetail := &ErrorDetail{
-		Code: err.Code.Value(),
+func CreatePaginatedResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, meta interface{}, statusCode ...int) PaginatedResponseStruct {
+	lang := getLanguageFromHeader(c)
+	
+	code := fiber.StatusOK
+	if len(statusCode) > 0 {
+		code = statusCode[0]
 	}
 	
-	// Handle bilingual details untuk validation errors
-	if validationDetails, ok := err.Details.([]errors.ValidationErrorDetails); ok {
-		errorDetail.Details = convertToBilingualValidationDetails(validationDetails)
-	} else {
-		// Untuk error tanpa details, set ke null
-		errorDetail.Details = nil
-	}
-
-	return Response{
-		Success: false,
-		Message: BilingualMessage{
-			ID: err.Code.MessageID(),
-			EN: err.Code.MessageEN(),
-		},
-		Error:     errorDetail,
+	return PaginatedResponseStruct{
+		Success:   true,
+		Code:      code,
+		Message:   getMessageByLanguage(messageID, messageEN, lang),
+		Data:      data,
+		Meta:      meta,
 		Timestamp: time.Now(),
 	}
 }
 
-// convertToBilingualValidationDetails mengubah ValidationErrorDetails menjadi bilingual
-func convertToBilingualValidationDetails(details []errors.ValidationErrorDetails) []map[string]interface{} {
-	var bilingualDetails []map[string]interface{}
+func convertToValidationErrors(details []errors.ValidationErrorDetails, _ string) []ValidationError {
+	var validationErrors []ValidationError
 	
 	for _, detail := range details {
-		bilingualDetail := map[string]interface{}{
-			"field": detail.Field,
-			"message": BilingualMessage{
+		validationError := ValidationError{
+			Field: detail.Field,
+			Message: BilingualMessage{
 				ID: detail.Message,
 				EN: getEnglishValidationMessage(detail.Message),
 			},
 		}
-		bilingualDetails = append(bilingualDetails, bilingualDetail)
+		validationErrors = append(validationErrors, validationError)
 	}
 	
-	return bilingualDetails
+	return validationErrors
 }
 
-// getEnglishValidationMessage - helper function untuk translate validation messages
 func getEnglishValidationMessage(idMessage string) string {
 	messageMap := map[string]string{
 		"Format email tidak valid":          "Invalid email format",
@@ -102,25 +159,4 @@ func getEnglishValidationMessage(idMessage string) string {
 	}
 	
 	return idMessage
-}
-
-type PaginatedResponse struct {
-	Success   bool            `json:"success"`
-	Message   BilingualMessage `json:"message"`
-	Data      interface{}     `json:"data"`
-	Meta      interface{}     `json:"meta"`
-	Timestamp time.Time       `json:"timestamp"`
-}
-
-func PaginatedSuccessResponse(messageID, messageEN string, data interface{}, meta interface{}) PaginatedResponse {
-	return PaginatedResponse{
-		Success: true,
-		Message: BilingualMessage{
-			ID: messageID,
-			EN: messageEN,
-		},
-		Data:      data,
-		Meta:      meta,
-		Timestamp: time.Now(),
-	}
 }
