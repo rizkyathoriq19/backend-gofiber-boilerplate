@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"boilerplate-be/internal/infrastructure/config"
@@ -15,8 +16,13 @@ type Client struct {
 }
 
 func New(cfg config.RedisConfig) (*Client, error) {
+	port, err := strconv.Atoi(cfg.Port)
+	if err != nil {
+		return nil, fmt.Errorf("invalid port number: %w", err)
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		Addr:     fmt.Sprintf("%s:%d", cfg.Host, port),
 		Password: cfg.Password,
 		DB:       cfg.DB,
 		PoolSize: cfg.PoolSize,
@@ -33,43 +39,43 @@ func New(cfg config.RedisConfig) (*Client, error) {
 	return &Client{Client: rdb}, nil
 }
 
-// Set value with expiration
-func (c *Client) SetEX(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	return c.Client.Set(ctx, key, value, expiration).Err()
+func (c *Client) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+	return c.Client.Set(ctx, key, value, ttl).Err()
 }
 
-// Get value
 func (c *Client) GetValue(ctx context.Context, key string) (string, error) {
-	return c.Client.Get(ctx, key).Result()
+	val, err := c.Client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return "", nil
+	}
+	return val, err
 }
 
-// Delete key
 func (c *Client) DeleteKey(ctx context.Context, key string) error {
 	return c.Client.Del(ctx, key).Err()
 }
 
-// Check if key exists
 func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 	result, err := c.Client.Exists(ctx, key).Result()
 	return result > 0, err
 }
 
-// Set value with TTL
-func (c *Client) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-	return c.Client.Set(ctx, key, value, ttl).Err()
-}
-
-// Increment value
 func (c *Client) Incr(ctx context.Context, key string) (int64, error) {
 	return c.Client.Incr(ctx, key).Result()
 }
 
-// Set expiration for key
 func (c *Client) Expire(ctx context.Context, key string, expiration time.Duration) error {
 	return c.Client.Expire(ctx, key, expiration).Err()
 }
 
-// Get TTL for key
 func (c *Client) TTL(ctx context.Context, key string) (time.Duration, error) {
 	return c.Client.TTL(ctx, key).Result()
+}
+
+func (c *Client) Keys(ctx context.Context, pattern string) ([]string, error) {
+	return c.Client.Keys(ctx, pattern).Result()
+}
+
+func (c *Client) Close() error {
+	return c.Client.Close()
 }

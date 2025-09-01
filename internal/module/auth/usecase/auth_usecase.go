@@ -1,28 +1,28 @@
 package usecase
 
 import (
-	"context"
-	"time"
-
 	"boilerplate-be/internal/infrastructure/errors"
 	"boilerplate-be/internal/infrastructure/helper"
-	"boilerplate-be/internal/infrastructure/redis"
 	"boilerplate-be/internal/infrastructure/token"
 	"boilerplate-be/internal/module/auth/domain"
 	"boilerplate-be/internal/module/auth/entity"
 )
 
 type authUseCase struct {
-	authRepo    domain.AuthRepository
-	jwtManager  *token.JWTManager
-	redisClient *redis.Client
+	authRepo     domain.AuthRepository
+	jwtManager   *token.JWTManager
+	tokenManager *helper.TokenManager
 }
 
-func NewAuthUseCase(authRepo domain.AuthRepository, jwtManager *token.JWTManager, redisClient *redis.Client) *authUseCase {
+func NewAuthUseCase(
+	authRepo domain.AuthRepository,
+	jwtManager *token.JWTManager,
+	tokenManager *helper.TokenManager,
+) *authUseCase {
 	return &authUseCase{
-		authRepo:    authRepo,
-		jwtManager:  jwtManager,
-		redisClient: redisClient,
+		authRepo:     authRepo,
+		jwtManager:   jwtManager,
+		tokenManager: tokenManager,
 	}
 }
 
@@ -57,7 +57,7 @@ func (u *authUseCase) Register(email, password, name string) (*entity.User, stri
 		return nil, "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	if err := u.authRepo.StoreRefreshToken(user.ID, refreshClaims.ID); err != nil {
+	if err := u.tokenManager.StoreToken(user.ID, refreshClaims.ID); err != nil {
 		return nil, "", "", errors.Wrap(err, errors.CacheStoreFailed)
 	}
 
@@ -65,32 +65,30 @@ func (u *authUseCase) Register(email, password, name string) (*entity.User, stri
 }
 
 func (u *authUseCase) Login(email, password string) (string, string, error) {
-    user, err := u.authRepo.GetUserByEmail(email)
-    if err != nil {
-        if appErr, ok := errors.IsAppError(err); ok {
-            return "", "", appErr
-        }
-        return "", "", err
-    }
+	user, err := u.authRepo.GetUserByEmail(email)
+	if err != nil {
+		return "", "", errors.New(errors.PasswordMismatch)
+	}
 
-    if err := helper.CheckPassword(user.Password, password); err != nil {
-        return "", "", errors.New(errors.InvalidCredentials)
-    }
+	if err := helper.CheckPassword(user.Password, password); err != nil {
+		return "", "", errors.New(errors.PasswordMismatch)
+	}
 
-    accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
-    if err != nil {
-        return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
-    }
+	accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
+	if err != nil {
+		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
+	}
 
-    refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
-    if err != nil {
-        return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
-    }
-    if err := u.authRepo.StoreRefreshToken(user.ID, refreshClaims.ID); err != nil {
-        return "", "", errors.Wrap(err, errors.CacheStoreFailed)
-    }
+	refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
+	if err != nil {
+		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
+	}
 
-    return accessToken, refreshToken, nil
+	if err := u.tokenManager.StoreToken(user.ID, refreshClaims.ID); err != nil {
+		return "", "", errors.Wrap(err, errors.CacheStoreFailed)
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, error) {
@@ -103,7 +101,7 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 		return "", "", errors.New(errors.InvalidToken)
 	}
 
-	exists, err := u.authRepo.ValidateRefreshToken(claims.UserID, claims.ID)
+	exists, err := u.tokenManager.ValidateToken(claims.UserID, claims.ID)
 	if err != nil {
 		return "", "", errors.Wrap(err, errors.CacheError)
 	}
@@ -113,10 +111,7 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 
 	user, err := u.authRepo.GetUserByID(claims.UserID)
 	if err != nil {
-		if appErr, ok := errors.IsAppError(err); ok {
-			return "", "", appErr
-		}
-		return "", "", errors.Wrap(err, errors.DatabaseScanFailed)
+		return "", "", errors.Wrap(err, errors.AccountNotFound)
 	}
 
 	newAccessToken, newRefreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
@@ -124,7 +119,7 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	if err := u.authRepo.RevokeRefreshToken(claims.UserID, claims.ID); err != nil {
+	if err := u.tokenManager.RevokeToken(claims.UserID, claims.ID); err != nil {
 		return "", "", errors.Wrap(err, errors.CacheError)
 	}
 
@@ -133,7 +128,7 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
 	}
 
-	if err := u.authRepo.StoreRefreshToken(user.ID, newRefreshClaims.ID); err != nil {
+	if err := u.tokenManager.StoreToken(user.ID, newRefreshClaims.ID); err != nil {
 		return "", "", errors.Wrap(err, errors.CacheStoreFailed)
 	}
 
@@ -141,16 +136,11 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 }
 
 func (u *authUseCase) Logout(userID, tokenID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := u.jwtManager.BlacklistToken(ctx, u.redisClient, tokenID, 24*time.Hour); err != nil {
-		return errors.Wrap(err, errors.CacheStoreFailed)
+	if err := u.tokenManager.BlacklistToken(userID, tokenID); err != nil {
+		return errors.Wrap(err, errors.CacheError)
 	}
 
-	// Revoke all refresh tokens for the user
-	// Note: This is a simple implementation. In production, you might want to be more selective
-	if err := u.authRepo.RevokeRefreshToken(userID, "*"); err != nil {
+	if err := u.tokenManager.RevokeAllUserTokens(userID); err != nil {
 		return errors.Wrap(err, errors.CacheError)
 	}
 

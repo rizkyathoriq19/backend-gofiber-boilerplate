@@ -10,6 +10,26 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type BaseResponse struct {
+	Success   bool        `json:"success"`
+	Code      int         `json:"code"`
+	Message   string      `json:"message"`
+	ErrorCode int         `json:"error_code,omitempty"`
+	Errors    interface{} `json:"errors,omitempty"`
+	Data      interface{} `json:"data,omitempty"`
+	Meta      *MetaResponse `json:"meta,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+type MetaResponse struct {
+	Page      int64 `json:"page"`
+	PageSize  int64 `json:"page_size"`
+	Total     int64 `json:"total"`
+	TotalPage int64 `json:"total_page"`
+	IsNext    bool  `json:"is_next"`
+	IsBack    bool  `json:"is_back"`
+}
+
 type BilingualMessage struct {
 	ID string `json:"id"`
 	EN string `json:"en"`
@@ -25,39 +45,15 @@ type FormattedValidationError struct {
 	Message string `json:"message"`
 }
 
-type ErrorResponseStruct struct {
-	Success    bool         `json:"success"`
-	Code       int          `json:"code"`        
-	Message    string       `json:"message"`     
-	ErrorCode  int          `json:"error_code"`  
-	Errors     interface{}  `json:"errors"`      
-	Timestamp  time.Time    `json:"timestamp"`
-}
-
-type SuccessResponseStruct struct {
-	Success   bool        `json:"success"`
-	Code      int         `json:"code"`       
-	Message   string      `json:"message"`    
-	Data      interface{} `json:"data,omitempty"`
-	Timestamp time.Time   `json:"timestamp"`
-}
-
-type PaginatedResponseStruct struct {
-	Success   bool        `json:"success"`
-	Code      int         `json:"code"`       
-	Message   string      `json:"message"`    
-	Data      interface{} `json:"data"`
-	Meta      interface{} `json:"meta"`
-	Timestamp time.Time   `json:"timestamp"`
+func (e BaseResponse) Error() string {
+	panic("unimplemented")
 }
 
 func getLanguageFromHeader(c *fiber.Ctx) string {
 	acceptLanguage := c.Get("Accept-Language", "id")
-	
 	if strings.Contains(acceptLanguage, "en") {
 		return "en"
 	}
-	
 	return "id"
 }
 
@@ -68,10 +64,10 @@ func getMessageByLanguage(messageID, messageEN, language string) string {
 	return messageID
 }
 
-func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) ErrorResponseStruct {
+func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) BaseResponse {
 	lang := getLanguageFromHeader(c)
 
-	errorResp := ErrorResponseStruct{
+	resp := BaseResponse{
 		Success:   false,
 		Code:      err.StatusCode,
 		Message:   getMessageByLanguage(err.Code.MessageID(), err.Code.MessageEN(), lang),
@@ -91,23 +87,20 @@ func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) ErrorResponseStruct 
 				Message: message,
 			})
 		}
-		errorResp.Errors = formattedErrors
-	} else {
-		errorResp.Errors = nil
+		resp.Errors = formattedErrors
 	}
 
-	return errorResp
+	return resp
 }
 
-func CreateSuccessResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, statusCode ...int) SuccessResponseStruct {
+func CreateSuccessResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, statusCode ...int) BaseResponse {
 	lang := getLanguageFromHeader(c)
-	
 	code := fiber.StatusOK
 	if len(statusCode) > 0 {
 		code = statusCode[0]
 	}
-	
-	return SuccessResponseStruct{
+
+	return BaseResponse{
 		Success:   true,
 		Code:      code,
 		Message:   getMessageByLanguage(messageID, messageEN, lang),
@@ -116,15 +109,14 @@ func CreateSuccessResponse(c *fiber.Ctx, messageID, messageEN string, data inter
 	}
 }
 
-func CreatePaginatedResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, meta interface{}, statusCode ...int) PaginatedResponseStruct {
+func CreatePaginatedResponse(c *fiber.Ctx, messageID, messageEN string, data interface{}, meta *MetaResponse, statusCode ...int) BaseResponse {
 	lang := getLanguageFromHeader(c)
-	
 	code := fiber.StatusOK
 	if len(statusCode) > 0 {
 		code = statusCode[0]
 	}
-	
-	return PaginatedResponseStruct{
+
+	return BaseResponse{
 		Success:   true,
 		Code:      code,
 		Message:   getMessageByLanguage(messageID, messageEN, lang),

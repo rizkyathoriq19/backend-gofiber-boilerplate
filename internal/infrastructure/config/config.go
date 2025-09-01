@@ -39,6 +39,7 @@ type RedisConfig struct {
 	Password string
 	DB       int
 	PoolSize int
+	DefaultTTL time.Duration
 }
 
 type JWTConfig struct {
@@ -84,6 +85,7 @@ func New() *Config {
 			Password: getEnv("REDIS_PASSWORD", ""),
 			DB:       parseInt(getEnv("REDIS_DB", "0"), 0),
 			PoolSize: parseInt(getEnv("REDIS_POOL_SIZE", "10"), 10),
+			DefaultTTL: parseDuration(getEnv("REDIS_DEFAULT_TTL", "1h"), 1*time.Hour),
 		},
 		JWT: JWTConfig{
 			Secret:        getEnv("JWT_SECRET", "your-secret-key"),

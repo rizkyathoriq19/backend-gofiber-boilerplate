@@ -8,6 +8,7 @@ import (
 
 	"boilerplate-be/internal/infrastructure/config"
 	"boilerplate-be/internal/infrastructure/database"
+	"boilerplate-be/internal/infrastructure/helper"
 	"boilerplate-be/internal/infrastructure/logger"
 	"boilerplate-be/internal/infrastructure/middleware"
 	"boilerplate-be/internal/infrastructure/redis"
@@ -47,14 +48,20 @@ func main() {
 	}
 	defer redisClient.Close()
 
+	// Initialize token manager
+	tokenManager := helper.NewTokenManager(redisClient)
+
+	// Initialize cache
+	cacheHelper := helper.NewCacheHelper(redisClient, cfg.Redis.DefaultTTL)
+
 	// Initialize JWT manager
 	jwtManager := token.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry)
 
 	// Initialize repositories
-	authRepo := repository.NewAuthRepository(db, redisClient)
+	authRepo := repository.NewAuthRepository(db, cacheHelper)
 
 	// Initialize use cases
-	authUseCase := usecase.NewAuthUseCase(authRepo, jwtManager, redisClient)
+	authUseCase := usecase.NewAuthUseCase(authRepo, jwtManager, tokenManager)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler(authUseCase)
