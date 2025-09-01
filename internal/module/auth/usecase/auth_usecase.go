@@ -67,7 +67,7 @@ func (u *authUseCase) Register(email, password, name string) (*entity.User, stri
 func (u *authUseCase) Login(email, password string) (string, string, error) {
 	user, err := u.authRepo.GetUserByEmail(email)
 	if err != nil {
-		return "", "", errors.New(errors.PasswordMismatch)
+		return "", "", errors.New(errors.AccountNotFound)
 	}
 
 	if err := helper.CheckPassword(user.Password, password); err != nil {
