@@ -108,7 +108,6 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 
 	if err := lib.ValidateStruct(req); err != nil {
 		validationErrors := lib.FormatValidationErrorForResponseBilingual(err)
-		// Panggil error code langsung dari package 'errors'
 		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
 		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 	}
