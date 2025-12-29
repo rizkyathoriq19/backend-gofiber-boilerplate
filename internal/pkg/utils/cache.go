@@ -117,10 +117,8 @@ func (ch *CacheHelper) GetOrSet(ctx context.Context, key string, fetchFn func() 
 		cacheTTL = ttl[0]
 	}
 
-	if cacheErr := ch.CacheJSON(ctx, key, result, cacheTTL); cacheErr != nil {
-		// Log error but don't fail the request
-		// Consider adding structured logging here
-	}
+	// Cache error is intentionally ignored - don't fail the request due to cache issues
+	_ = ch.CacheJSON(ctx, key, result, cacheTTL)
 
 	return result, nil
 }

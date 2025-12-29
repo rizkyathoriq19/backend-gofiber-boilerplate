@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -402,14 +401,14 @@ func TestMockRepository(t *testing.T) {
 func BenchmarkPasswordHashing(b *testing.B) {
 	password := "testPassword123!"
 	for i := 0; i < b.N; i++ {
-		security.HashPassword(password)
+		_, _ = security.HashPassword(password)
 	}
 }
 
 func BenchmarkTokenGeneration(b *testing.B) {
 	jwtManager := security.NewJWTManager("test-secret", 24*time.Hour)
 	for i := 0; i < b.N; i++ {
-		jwtManager.GenerateTokenPair("user-123", "test@example.com", "user")
+		_, _, _ = jwtManager.GenerateTokenPair("user-123", "test@example.com", "user")
 	}
 }
 
@@ -419,12 +418,6 @@ func BenchmarkTokenValidation(b *testing.B) {
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		jwtManager.ValidateToken(token)
+		_, _ = jwtManager.ValidateToken(token)
 	}
-}
-
-// Helper to check error types
-func isAppError(err error) bool {
-	var appErr apperrors.AppError
-	return errors.As(err, &appErr)
 }
