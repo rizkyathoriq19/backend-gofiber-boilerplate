@@ -1,0 +1,62 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Build artifacts
+bin/
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+*_test.go
+**/*_test.go
+
+# Coverage
+*.out
+coverage.html
+
+# Documentation (rebuilt in container if needed)
+# docs/
+
+# HTTP test files
+http/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+
+# Air config (not needed in production)
+.air.toml
+.air.windows.toml
+
+# Makefile (not needed in container)
+# Makefile
+
+# README (not needed in container)
+# README.md
+# ARCHITECTURE.md
+# CONTRIBUTING.md
+# DATABASE_SCHEMA.md

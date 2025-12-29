@@ -1,0 +1,94 @@
+# Development docker-compose with hot reload
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+services:
+  # ==================== API Service (Development) ====================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: gofiber-api-dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - APP_NAME=${APP_NAME:-Go Fiber API (Dev)}
+      - APP_ENV=development
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - APP_PREFORK=false
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-boilerplate_dev}
+      - DB_SSL_MODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - JWT_EXPIRY=24h
+      - JWT_REFRESH_EXPIRY=168h
+      - RATE_LIMIT_MAX=1000
+      - RATE_LIMIT_WINDOW=1m
+      - BCRYPT_COST=10
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Exclude unnecessary directories
+      - /app/bin
+      - /app/tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network-dev
+
+  # ==================== PostgreSQL (Development) ====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: gofiber-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-boilerplate_dev}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ==================== Redis (Development) ====================
+  redis:
+    image: redis:7-alpine
+    container_name: gofiber-redis-dev
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - app-network-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+# ==================== Volumes ====================
+volumes:
+  postgres_data_dev:
+    driver: local
+
+# ==================== Networks ====================
+networks:
+  app-network-dev:
+    driver: bridge

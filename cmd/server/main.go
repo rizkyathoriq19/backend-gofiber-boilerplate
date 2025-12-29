@@ -1,3 +1,22 @@
+// Package main is the entry point for the Go Fiber Boilerplate API
+//
+// @title           Go Fiber Boilerplate API
+// @version         1.0
+// @description     A production-ready Go Fiber boilerplate with RBAC, Redis caching, and PostgreSQL.
+//
+// @contact.name   API Support
+// @contact.email  support@example.com
+//
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+//
+// @host      localhost:8000
+// @BasePath  /api/v1
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Format: Bearer {token}. Get token from /auth/login endpoint.
 package main
 
 import (
@@ -6,19 +25,22 @@ import (
 	"os/signal"
 	"syscall"
 
-	"boilerplate-be/internal/infrastructure/config"
-	"boilerplate-be/internal/infrastructure/database"
-	"boilerplate-be/internal/infrastructure/helper"
-	"boilerplate-be/internal/infrastructure/logger"
-	"boilerplate-be/internal/infrastructure/middleware"
-	"boilerplate-be/internal/infrastructure/redis"
-	"boilerplate-be/internal/infrastructure/token"
-	"boilerplate-be/internal/module/auth/handler"
-	"boilerplate-be/internal/module/auth/repository"
-	"boilerplate-be/internal/module/auth/usecase"
+	_ "boilerplate-be/docs"
+	"boilerplate-be/internal/config"
+	"boilerplate-be/internal/database"
+	"boilerplate-be/internal/database/redis"
+	"boilerplate-be/internal/middleware"
+	"boilerplate-be/internal/module/auth"
+	"boilerplate-be/internal/module/rbac"
+	"boilerplate-be/internal/pkg/security"
+	"boilerplate-be/internal/pkg/utils"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
+	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 )
 
@@ -31,74 +53,126 @@ func main() {
 	// Initialize config
 	cfg := config.New()
 
-	// Initialize logger
-	logger := logger.New(cfg.App.Env)
-
 	// Initialize database
 	db, err := database.New(cfg.Database)
 	if err != nil {
-		logger.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
 	// Initialize Redis
 	redisClient, err := redis.New(cfg.Redis)
 	if err != nil {
-		logger.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 	defer redisClient.Close()
 
 	// Initialize token manager
-	tokenManager := helper.NewTokenManager(redisClient)
+	tokenManager := security.NewTokenManager(redisClient)
 
 	// Initialize cache
-	cacheHelper := helper.NewCacheHelper(redisClient, cfg.Redis.DefaultTTL)
+	cacheHelper := utils.NewCacheHelper(redisClient, cfg.Redis.DefaultTTL)
 
 	// Initialize JWT manager
-	jwtManager := token.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry)
+	jwtManager := security.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry)
 
-	// Initialize repositories
-	authRepo := repository.NewAuthRepository(db, cacheHelper)
+	// ==================== Initialize Repositories ====================
+	authRepo := auth.NewAuthRepository(db, cacheHelper)
+	rbacRepo := rbac.NewRBACRepository(db, cacheHelper)
 
-	// Initialize use cases
-	authUseCase := usecase.NewAuthUseCase(authRepo, jwtManager, tokenManager)
+	// ==================== Initialize Use Cases ====================
+	authUseCase := auth.NewAuthUseCase(authRepo, jwtManager, tokenManager)
+	rbacUseCase := rbac.NewRBACUseCase(rbacRepo)
 
-	// Initialize handlers
-	authHandler := handler.NewAuthHandler(authUseCase)
+	// ==================== Initialize Handlers ====================
+	authHandler := auth.NewAuthHandler(authUseCase)
+	rbacHandler := rbac.NewRBACHandler(rbacUseCase)
 
-	// Initialize Fiber app
+	// Initialize Fiber app with optimized config
 	app := fiber.New(fiber.Config{
 		AppName:      cfg.App.Name,
 		ErrorHandler: middleware.ErrorHandler,
+		JSONEncoder:  json.Marshal,
+		JSONDecoder:  json.Unmarshal,
+		Prefork:      cfg.App.Prefork,
+		// Performance optimizations
+		ReduceMemoryUsage:     true,
+		DisableStartupMessage: cfg.App.Env == "production",
+		ReadBufferSize:        4096,
+		WriteBufferSize:       4096,
 	})
 
-	// Add middleware
+	// Add middleware (order matters!)
 	app.Use(recover.New())
-	app.Use(middleware.LoggerMiddleware(logger))
+	app.Use(middleware.RequestIDMiddleware())
+	app.Use(middleware.LoggerMiddleware(cfg.App.Env))
+	app.Use(compress.New())
+	app.Use(etag.New())
 	app.Use(middleware.CorsMiddleware(cfg))
 	app.Use(middleware.HelmetMiddleware())
-	app.Use(middleware.RateLimitMiddleware(redisClient, cfg))
+	app.Use(middleware.RateLimitMiddleware(cfg))
 
+	// Swagger UI
+	app.Get("/swagger/*", swagger.New(swagger.Config{
+		DeepLinking: true,
+	}))
+
+	// Serve static docs files (architecture diagrams, etc)
+	app.Static("/docs", "./docs")
+
+	// Health check endpoints
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.SendString("pong")
 	})
-	
+
 	// Routes
 	api := app.Group("/api/v1")
-	
-	// Auth routes
-	auth := api.Group("/auth")
-	auth.Post("/register", authHandler.Register)
-	auth.Post("/login", authHandler.Login)
-	auth.Post("/refresh", authHandler.RefreshToken)
-	auth.Post("/logout", middleware.AuthMiddleware(jwtManager, redisClient), authHandler.Logout)
-	auth.Get("/profile", middleware.AuthMiddleware(jwtManager, redisClient), authHandler.Profile)
-	auth.Put("/profile", middleware.AuthMiddleware(jwtManager, redisClient), authHandler.UpdateProfile)
+
+	// ==================== Public Routes ====================
+	// Auth routes (public)
+	authGroup := api.Group("/auth")
+	authGroup.Post("/register", authHandler.Register)
+	authGroup.Post("/login", authHandler.Login)
+	authGroup.Post("/refresh", authHandler.RefreshToken)
+
+	// ==================== Protected Routes (Authenticated Users) ====================
+	// Auth routes (protected)
+	authProtected := authGroup.Group("", middleware.AuthMiddleware(jwtManager, redisClient))
+	authProtected.Post("/logout", authHandler.Logout)
+	authProtected.Get("/profile", authHandler.Profile)
+	authProtected.Put("/profile", authHandler.UpdateProfile)
+	authProtected.Get("/my-roles", rbacHandler.GetMyRoles)
+	authProtected.Get("/my-permissions", rbacHandler.GetMyPermissions)
+
+	// ==================== Super Admin Routes ====================
+	// Super admin routes (requires super_admin role)
+	superAdmin := api.Group("/super-admin",
+		middleware.AuthMiddleware(jwtManager, redisClient),
+		middleware.IsSuperAdmin(rbacUseCase),
+	)
+
+	// User role management
+	superAdmin.Get("/users/:userId/roles", rbacHandler.GetUserRoles)
+	superAdmin.Post("/users/:userId/roles", rbacHandler.AssignRoleToUser)
+	superAdmin.Delete("/users/:userId/roles/:roleId", rbacHandler.RemoveRoleFromUser)
+
+	// Role management
+	superAdmin.Get("/roles", rbacHandler.GetRoles)
+	superAdmin.Get("/roles/:id", rbacHandler.GetRole)
+	superAdmin.Post("/roles", rbacHandler.CreateRole)
+	superAdmin.Put("/roles/:id", rbacHandler.UpdateRole)
+	superAdmin.Delete("/roles/:id", rbacHandler.DeleteRole)
+
+	// Permission management
+	superAdmin.Get("/permissions", rbacHandler.GetPermissions)
+	superAdmin.Get("/roles/:id/permissions", rbacHandler.GetRolePermissions)
+	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
+	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
 
 	// Health check
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"status": "ok",
+			"status":  "ok",
 			"message": "Server is running",
 		})
 	})
@@ -106,22 +180,23 @@ func main() {
 	// Graceful shutdown
 	go func() {
 		if err := app.Listen(":" + cfg.App.Port); err != nil {
-			logger.Fatalf("Server failed to start: %v", err)
+			log.Fatalf("Server failed to start: %v", err)
 		}
 	}()
 
-	logger.Infof("Server started on port %s", cfg.App.Port)
+	log.Printf("Server started on port %s", cfg.App.Port)
+	log.Printf("Swagger UI: http://localhost:%s/swagger/", cfg.App.Port)
 
 	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info("Shutting down server...")
+	log.Println("Shutting down server...")
 
 	if err := app.Shutdown(); err != nil {
-		logger.Errorf("Server forced to shutdown: %v", err)
+		log.Printf("Server forced to shutdown: %v", err)
 	}
 
-	logger.Info("Server exited")
+	log.Println("Server exited")
 }

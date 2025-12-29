@@ -1,0 +1,958 @@
+basePath: /api/v1
+definitions:
+  docs.AssignPermissionRequest:
+    description: Permission assignment request
+    properties:
+      permission_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - permission_id
+    type: object
+  docs.AssignRoleRequest:
+    description: Role assignment request
+    properties:
+      role_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - role_id
+    type: object
+  docs.AuthResponse:
+    description: Authentication response with user data and tokens
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      expires_in:
+        example: 86400
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/docs.UserResponse'
+    type: object
+  docs.CreateRoleRequest:
+    description: Role creation request
+    properties:
+      description:
+        example: Content moderator
+        maxLength: 255
+        type: string
+      name:
+        example: moderator
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  docs.ErrorResponse:
+    description: Standard error response wrapper
+    properties:
+      code:
+        example: 400
+        type: integer
+      error_code:
+        example: -1001
+        type: integer
+      message:
+        example: Error occurred
+        type: string
+      success:
+        example: false
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  docs.LoginRequest:
+    description: User login request
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  docs.PermissionResponse:
+    description: Permission information
+    properties:
+      action:
+        example: read
+        type: string
+      created_at:
+        type: string
+      description:
+        example: View users
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: users:read
+        type: string
+      resource:
+        example: users
+        type: string
+    type: object
+  docs.RefreshTokenRequest:
+    description: Refresh token request
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  docs.RegisterRequest:
+    description: User registration request
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: John Doe
+        minLength: 2
+        type: string
+      password:
+        example: password123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  docs.RoleResponse:
+    description: Role information
+    properties:
+      created_at:
+        type: string
+      description:
+        example: Administrator role
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: admin
+        type: string
+    type: object
+  docs.SuccessResponse:
+    description: Standard success response wrapper
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      message:
+        example: Operation successful
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  docs.TokenResponse:
+    description: Token response with access and refresh tokens
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      expires_in:
+        example: 86400
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  docs.UpdateProfileRequest:
+    description: Profile update request
+    properties:
+      name:
+        example: John Updated
+        minLength: 2
+        type: string
+    type: object
+  docs.UserResponse:
+    description: User information
+    properties:
+      created_at:
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: John Doe
+        type: string
+      role:
+        example: user
+        type: string
+      updated_at:
+        type: string
+    type: object
+  docs.UserRolesResponse:
+    description: User roles response
+    properties:
+      roles:
+        items:
+          $ref: '#/definitions/docs.RoleResponse'
+        type: array
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: A production-ready Go Fiber boilerplate with RBAC, Redis caching, and
+    PostgreSQL.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Go Fiber Boilerplate API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user and returns access/refresh tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.TokenResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: User login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidates current access token and revokes refresh tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - Auth
+  /auth/my-permissions:
+    get:
+      consumes:
+      - application/json
+      description: Returns permissions for the current authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.PermissionResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my permissions
+      tags:
+      - RBAC
+  /auth/my-roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns roles for the current authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.UserRolesResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my roles
+      tags:
+      - RBAC
+  /auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: Returns current authenticated user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Auth
+    put:
+      consumes:
+      - application/json
+      description: Updates current authenticated user's profile
+      parameters:
+      - description: Profile update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Exchanges refresh token for new access/refresh token pair
+      parameters:
+      - description: Refresh token
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.TokenResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account and returns tokens
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Register new user
+      tags:
+      - Auth
+  /super-admin/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Returns all permissions in the system (Super Admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.PermissionResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all permissions
+      tags:
+      - Super Admin
+  /super-admin/roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns all roles in the system (Super Admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.RoleResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all roles
+      tags:
+      - Super Admin
+    post:
+      consumes:
+      - application/json
+      description: Creates a new role in the system (Super Admin only)
+      parameters:
+      - description: Role data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new role
+      tags:
+      - Super Admin
+  /super-admin/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a role (Super Admin only, cannot delete system roles)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a role
+      tags:
+      - Super Admin
+    get:
+      consumes:
+      - application/json
+      description: Returns a role with its assigned permissions (Super Admin only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoleResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get role details
+      tags:
+      - Super Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing role (Super Admin only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoleResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a role
+      tags:
+      - Super Admin
+  /super-admin/roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Returns all permissions assigned to a role (Super Admin only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.PermissionResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get role permissions
+      tags:
+      - Super Admin
+    post:
+      consumes:
+      - application/json
+      description: Assigns a permission to a role (Super Admin only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission assignment
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.AssignPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign permission to role
+      tags:
+      - Super Admin
+  /super-admin/roles/{id}/permissions/{permissionId}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a permission from a role (Super Admin only)
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission ID
+        in: path
+        name: permissionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove permission from role
+      tags:
+      - Super Admin
+  /super-admin/users/{userId}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns all roles assigned to a user (Super Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.UserRolesResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user roles
+      tags:
+      - Super Admin
+    post:
+      consumes:
+      - application/json
+      description: Assigns a role to a user (Super Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Role assignment
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.AssignRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign role to user
+      tags:
+      - Super Admin
+  /super-admin/users/{userId}/roles/{roleId}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a role from a user (Super Admin only)
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove role from user
+      tags:
+      - Super Admin
+securityDefinitions:
+  BearerAuth:
+    description: 'Format: Bearer {token}. Get token from /auth/login endpoint.'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
