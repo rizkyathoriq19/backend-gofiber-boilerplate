@@ -9,14 +9,8 @@ INSERT INTO users (id, name, email, password, role) VALUES
      'superadmin@example.com', 
      '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
      'admin'),
-    -- Admin user
-    ('00000000-0000-0000-0000-000000000002', 
-     'Admin User', 
-     'admin@example.com', 
-     '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
-     'admin'),
     -- Regular user
-    ('00000000-0000-0000-0000-000000000003', 
+    ('00000000-0000-0000-0000-000000000002', 
      'Test User', 
      'user@example.com', 
      '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
@@ -29,14 +23,9 @@ SELECT '00000000-0000-0000-0000-000000000001', r.id
 FROM roles r WHERE r.name = 'super_admin'
 ON CONFLICT DO NOTHING;
 
--- Assign admin role to admin user
-INSERT INTO user_roles (user_id, role_id)
-SELECT '00000000-0000-0000-0000-000000000002', r.id 
-FROM roles r WHERE r.name = 'admin'
-ON CONFLICT DO NOTHING;
-
 -- Assign user role to regular user
 INSERT INTO user_roles (user_id, role_id)
-SELECT '00000000-0000-0000-0000-000000000003', r.id 
+SELECT '00000000-0000-0000-0000-000000000002', r.id 
 FROM roles r WHERE r.name = 'user'
 ON CONFLICT DO NOTHING;
+

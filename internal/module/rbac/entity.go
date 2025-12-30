@@ -6,12 +6,10 @@ import (
 
 // Role represents a user role in the system
 type Role struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description,omitempty"`
-	ParentRoleID *string   `json:"parent_role_id,omitempty"`
-	Level        int       `json:"level"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // Permission represents a permission that can be assigned to roles
@@ -44,18 +42,6 @@ type RoleWithPermissions struct {
 	Permissions []Permission `json:"permissions"`
 }
 
-// RoleWithChildren includes role with its child roles (hierarchical view)
-type RoleWithChildren struct {
-	Role
-	Children []RoleWithChildren `json:"children,omitempty"`
-}
-
-// InheritedPermission represents a permission with inheritance info
-type InheritedPermission struct {
-	Permission
-	IsInherited bool `json:"is_inherited"`
-}
-
 // UserWithRoles includes user ID with their assigned roles
 type UserWithRoles struct {
 	UserID string `json:"user_id"`
@@ -68,3 +54,4 @@ type UserPermissions struct {
 	Roles       []string     `json:"roles"`
 	Permissions []Permission `json:"permissions"`
 }
+

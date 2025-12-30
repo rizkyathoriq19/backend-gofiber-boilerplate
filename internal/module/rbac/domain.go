@@ -9,9 +9,6 @@ type RBACRepository interface {
 	CreateRole(role *Role) error
 	UpdateRole(role *Role) error
 	DeleteRole(id string) error
-	GetRoleHierarchy() ([]RoleWithChildren, error)
-	GetRoleAncestors(roleID string) ([]Role, error)
-	GetRoleDescendants(roleID string) ([]Role, error)
 
 	// Permission operations
 	GetPermissions() ([]Permission, error)
@@ -27,12 +24,8 @@ type RBACRepository interface {
 
 	// Role-Permission operations
 	GetRolePermissions(roleID string) ([]Permission, error)
-	GetRolePermissionsWithInheritance(roleID string) ([]InheritedPermission, error)
 	AssignPermissionToRole(roleID, permissionID string) error
 	RemovePermissionFromRole(roleID, permissionID string) error
-
-	// Hierarchical role operations
-	SetParentRole(roleID, parentRoleID string) error
 
 	// User permission check (aggregated from all user's roles)
 	GetUserPermissions(userID string) ([]Permission, error)
@@ -58,16 +51,12 @@ type RBACUseCase interface {
 
 	// Role-Permission operations
 	GetRolePermissions(roleID string) ([]Permission, error)
-	GetRolePermissionsWithInheritance(roleID string) ([]InheritedPermission, error)
 	AssignPermissionToRole(roleID, permissionID string) error
 	RemovePermissionFromRole(roleID, permissionID string) error
-
-	// Role hierarchy operations
-	GetRoleHierarchy() ([]RoleWithChildren, error)
-	SetParentRole(roleID, parentRoleID string) error
 
 	// Permission checking
 	CheckUserRole(userID string, roles ...string) (bool, error)
 	CheckUserPermission(userID string, permissions ...string) (bool, error)
 	GetUserPermissions(userID string) ([]Permission, error)
 }
+

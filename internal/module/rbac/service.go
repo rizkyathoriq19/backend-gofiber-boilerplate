@@ -71,7 +71,7 @@ func (u *rbacUseCase) DeleteRole(id string) error {
 	}
 
 	// Prevent deletion of system roles
-	if role.Name == "super_admin" || role.Name == "admin" || role.Name == "user" {
+	if role.Name == "super_admin" || role.Name == "user" {
 		return errors.New(errors.Forbidden)
 	}
 
@@ -178,50 +178,3 @@ func (u *rbacUseCase) GetUserPermissions(userID string) ([]Permission, error) {
 	return u.rbacRepo.GetUserPermissions(userID)
 }
 
-// ==================== Hierarchical Role Operations ====================
-
-func (u *rbacUseCase) GetRoleHierarchy() ([]RoleWithChildren, error) {
-	return u.rbacRepo.GetRoleHierarchy()
-}
-
-func (u *rbacUseCase) GetRolePermissionsWithInheritance(roleID string) ([]InheritedPermission, error) {
-	// Verify role exists
-	if _, err := u.rbacRepo.GetRoleByID(roleID); err != nil {
-		return nil, err
-	}
-
-	return u.rbacRepo.GetRolePermissionsWithInheritance(roleID)
-}
-
-func (u *rbacUseCase) SetParentRole(roleID, parentRoleID string) error {
-	// Verify role exists
-	role, err := u.rbacRepo.GetRoleByID(roleID)
-	if err != nil {
-		return err
-	}
-
-	// Prevent setting parent for system roles
-	if role.Name == "super_admin" {
-		return errors.New(errors.Forbidden)
-	}
-
-	// If setting a parent, verify it exists
-	if parentRoleID != "" {
-		if _, err := u.rbacRepo.GetRoleByID(parentRoleID); err != nil {
-			return err
-		}
-
-		// Prevent circular reference - check if parentRoleID is a descendant of roleID
-		descendants, err := u.rbacRepo.GetRoleDescendants(roleID)
-		if err != nil {
-			return err
-		}
-		for _, descendant := range descendants {
-			if descendant.ID == parentRoleID {
-				return errors.New(errors.Conflict) // Circular reference
-			}
-		}
-	}
-
-	return u.rbacRepo.SetParentRole(roleID, parentRoleID)
-}
