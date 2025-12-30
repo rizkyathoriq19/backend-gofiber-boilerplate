@@ -36,6 +36,7 @@ import (
 	"boilerplate-be/internal/pkg/response"
 	"boilerplate-be/internal/pkg/security"
 	"boilerplate-be/internal/pkg/utils"
+	"boilerplate-be/web"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -172,35 +173,62 @@ func main() {
 	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
 
 
-
-	// Health check
+	// Health check - HTML UI
 	api.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"message": "Server is running",
-		})
+		html, err := web.RenderHealth(cfg.App.Name)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error rendering page")
+		}
+		c.Set("Content-Type", "text/html")
+		return c.SendString(html)
 	})
 
-	// Root path handler - API welcome/info
+	// Root path handler - Welcome UI
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusOK).JSON(response.CreateSuccessResponse(
-			c,
-			"Selamat datang di "+cfg.App.Name,
-			"Welcome to "+cfg.App.Name,
-			fiber.Map{
-				"name":    cfg.App.Name,
-				"version": "1.0",
-				"docs":    "/swagger/",
-				"health":  "/api/v1/health",
-			},
-		))
+		html, err := web.RenderIndex(cfg.App.Name)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error rendering page")
+		}
+		c.Set("Content-Type", "text/html")
+		return c.SendString(html)
 	})
 
-	// 404 Not Found handler - must be last
+	// Resource not found page
+	app.Get("/not-found", func(c *fiber.Ctx) error {
+		html, err := web.RenderNotFound()
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("Resource Not Found")
+		}
+		c.Set("Content-Type", "text/html")
+		return c.Status(fiber.StatusNotFound).SendString(html)
+	})
+
+	// 404 Not Found handler - HTML UI
 	app.Use(func(c *fiber.Ctx) error {
-		return c.Status(fiber.StatusNotFound).JSON(
-			response.CreateErrorResponse(c, errors.New(errors.ResourceNotFound)),
-		)
+		// Check Accept header - return JSON for API clients
+		acceptHeader := c.Get("Accept")
+		if acceptHeader == "application/json" {
+			return c.Status(fiber.StatusNotFound).JSON(
+				response.CreateErrorResponse(c, errors.New(errors.ResourceNotFound)),
+			)
+		}
+
+		// Return HTML for browser routes
+		var html string
+		var err error
+
+		// Use not_found template for API routes, 404 for other routes
+		if len(c.Path()) > 4 && c.Path()[:4] == "/api" {
+			html, err = web.RenderNotFound()
+		} else {
+			html, err = web.Render404()
+		}
+
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("Page Not Found")
+		}
+		c.Set("Content-Type", "text/html")
+		return c.Status(fiber.StatusNotFound).SendString(html)
 	})
 
 	// Graceful shutdown

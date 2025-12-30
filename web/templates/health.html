@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Check - {{.AppName}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 48px; text-align: center; }
+        .status { display: inline-flex; align-items: center; gap: 12px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); padding: 12px 24px; border-radius: 100px; margin-bottom: 24px; }
+        .dot { width: 12px; height: 12px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status span { color: #22c55e; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        h1 { color: #f8fafc; font-size: 24px; margin-bottom: 8px; }
+        p { color: #94a3b8; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="status"><div class="dot"></div><span>Healthy</span></div>
+        <h1>{{.AppName}}</h1>
+        <p>All systems operational</p>
+    </div>
+</body>
+</html>
