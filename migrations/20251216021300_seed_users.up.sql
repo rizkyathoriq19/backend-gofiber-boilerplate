@@ -1,5 +1,5 @@
 -- Seed default users
--- Password: password123 (bcrypt hash with cost 10)
+-- Password: password123 (bcrypt hash with cost 12)
 -- Hash generated from: password123
 
 INSERT INTO users (id, name, email, password, role) VALUES
@@ -7,19 +7,19 @@ INSERT INTO users (id, name, email, password, role) VALUES
     ('00000000-0000-0000-0000-000000000001', 
      'Super Admin', 
      'superadmin@example.com', 
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 
+     '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
      'admin'),
     -- Admin user
     ('00000000-0000-0000-0000-000000000002', 
      'Admin User', 
      'admin@example.com', 
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 
+     '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
      'admin'),
     -- Regular user
     ('00000000-0000-0000-0000-000000000003', 
      'Test User', 
      'user@example.com', 
-     '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 
+     '$2a$12$Q9IdH6PWbwol9aZYgHslM.VfkVMBqEL3HyceYr9Pa8JYuCpHTIXym', 
      'user')
 ON CONFLICT (email) DO NOTHING;
 

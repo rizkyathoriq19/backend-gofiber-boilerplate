@@ -30,8 +30,12 @@ import (
 	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/database/redis"
 	"boilerplate-be/internal/middleware"
+	"boilerplate-be/internal/module/audit"
 	"boilerplate-be/internal/module/auth"
 	"boilerplate-be/internal/module/rbac"
+	"boilerplate-be/internal/module/upload"
+	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/pkg/response"
 	"boilerplate-be/internal/pkg/security"
 	"boilerplate-be/internal/pkg/utils"
 
@@ -79,14 +83,23 @@ func main() {
 	// ==================== Initialize Repositories ====================
 	authRepo := auth.NewAuthRepository(db, cacheHelper)
 	rbacRepo := rbac.NewRBACRepository(db, cacheHelper)
+	auditRepo := audit.NewAuditRepository(db)
+	fileRepo := upload.NewFileRepository(db)
+
+	// ==================== Initialize File Storage ====================
+	localStorage := upload.NewLocalStorage("./uploads", cfg.App.Host+":"+cfg.App.Port+"/uploads")
 
 	// ==================== Initialize Use Cases ====================
 	authUseCase := auth.NewAuthUseCase(authRepo, jwtManager, tokenManager)
 	rbacUseCase := rbac.NewRBACUseCase(rbacRepo)
+	auditUseCase := audit.NewAuditUseCase(auditRepo)
+	fileUseCase := upload.NewFileUseCase(fileRepo, localStorage)
 
 	// ==================== Initialize Handlers ====================
 	authHandler := auth.NewAuthHandler(authUseCase)
 	rbacHandler := rbac.NewRBACHandler(rbacUseCase)
+	auditHandler := audit.NewAuditHandler(auditUseCase)
+	fileHandler := upload.NewFileHandler(fileUseCase)
 
 	// Initialize Fiber app with optimized config
 	app := fiber.New(fiber.Config{
@@ -169,12 +182,50 @@ func main() {
 	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
 	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
 
+	// Audit logs management
+	superAdmin.Get("/audit-logs", auditHandler.List)
+	superAdmin.Get("/audit-logs/:id", auditHandler.GetByID)
+	superAdmin.Post("/audit-logs/cleanup", auditHandler.Cleanup)
+
+	// ==================== File Upload Routes (Protected) ====================
+	fileGroup := api.Group("/files", middleware.AuthMiddleware(jwtManager, redisClient))
+	fileGroup.Post("/upload", fileHandler.Upload)
+	fileGroup.Get("", fileHandler.GetMyFiles)
+	fileGroup.Get("/:id", fileHandler.GetByID)
+	fileGroup.Get("/:id/url", fileHandler.GetURL)
+	fileGroup.Delete("/:id", fileHandler.Delete)
+
+	// Serve uploaded files (public access for public files)
+	app.Static("/uploads", "./uploads")
+
 	// Health check
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status":  "ok",
 			"message": "Server is running",
 		})
+	})
+
+	// Root path handler - API welcome/info
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(response.CreateSuccessResponse(
+			c,
+			"Selamat datang di "+cfg.App.Name,
+			"Welcome to "+cfg.App.Name,
+			fiber.Map{
+				"name":    cfg.App.Name,
+				"version": "1.0",
+				"docs":    "/swagger/",
+				"health":  "/api/v1/health",
+			},
+		))
+	})
+
+	// 404 Not Found handler - must be last
+	app.Use(func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(
+			response.CreateErrorResponse(c, errors.New(errors.ResourceNotFound)),
+		)
 	})
 
 	// Graceful shutdown
