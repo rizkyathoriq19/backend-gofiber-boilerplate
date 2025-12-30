@@ -6,14 +6,13 @@ DB_URL=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?ssl
 .PHONY: run build clean migrate-up migrate-down migrate-create migrate-install seed
 
 run:
-	./bin/server.exe
+	./bin/server
 
 build:
-	if not exist bin mkdir bin
-	go build -o bin/server.exe cmd/server/main.go
+	go build -o bin/server cmd/server/main.go
 
 clean:
-	if exist bin\server.exe del bin\server.exe
+	if exist bin\server del bin\server
 
 migrate-install:
 	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest

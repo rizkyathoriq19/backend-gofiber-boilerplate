@@ -27,7 +27,7 @@ func NewRBACRepository(db *sql.DB, cacheHelper *utils.CacheHelper) RBACRepositor
 // ==================== Role Operations ====================
 
 func (r *rbacRepository) GetRoles() ([]Role, error) {
-	query := `SELECT id, name, description, created_at FROM roles ORDER BY name`
+	query := `SELECT id, name, description, parent_role_id, COALESCE(level, 0), created_at FROM roles ORDER BY level, name`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
@@ -38,10 +38,14 @@ func (r *rbacRepository) GetRoles() ([]Role, error) {
 	for rows.Next() {
 		var role Role
 		var description sql.NullString
-		if err := rows.Scan(&role.ID, &role.Name, &description, &role.CreatedAt); err != nil {
+		var parentRoleID sql.NullString
+		if err := rows.Scan(&role.ID, &role.Name, &description, &parentRoleID, &role.Level, &role.CreatedAt); err != nil {
 			return nil, errors.Wrap(err, errors.DatabaseScanFailed)
 		}
 		role.Description = description.String
+		if parentRoleID.Valid {
+			role.ParentRoleID = &parentRoleID.String
+		}
 		roles = append(roles, role)
 	}
 
@@ -49,10 +53,11 @@ func (r *rbacRepository) GetRoles() ([]Role, error) {
 }
 
 func (r *rbacRepository) GetRoleByID(id string) (*Role, error) {
-	query := `SELECT id, name, description, created_at FROM roles WHERE id = $1`
+	query := `SELECT id, name, description, parent_role_id, COALESCE(level, 0), created_at FROM roles WHERE id = $1`
 	var role Role
 	var description sql.NullString
-	err := r.db.QueryRow(query, id).Scan(&role.ID, &role.Name, &description, &role.CreatedAt)
+	var parentRoleID sql.NullString
+	err := r.db.QueryRow(query, id).Scan(&role.ID, &role.Name, &description, &parentRoleID, &role.Level, &role.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(errors.ResourceNotFound)
@@ -60,14 +65,18 @@ func (r *rbacRepository) GetRoleByID(id string) (*Role, error) {
 		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
 	}
 	role.Description = description.String
+	if parentRoleID.Valid {
+		role.ParentRoleID = &parentRoleID.String
+	}
 	return &role, nil
 }
 
 func (r *rbacRepository) GetRoleByName(name string) (*Role, error) {
-	query := `SELECT id, name, description, created_at FROM roles WHERE name = $1`
+	query := `SELECT id, name, description, parent_role_id, COALESCE(level, 0), created_at FROM roles WHERE name = $1`
 	var role Role
 	var description sql.NullString
-	err := r.db.QueryRow(query, name).Scan(&role.ID, &role.Name, &description, &role.CreatedAt)
+	var parentRoleID sql.NullString
+	err := r.db.QueryRow(query, name).Scan(&role.ID, &role.Name, &description, &parentRoleID, &role.Level, &role.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New(errors.ResourceNotFound)
@@ -75,6 +84,9 @@ func (r *rbacRepository) GetRoleByName(name string) (*Role, error) {
 		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
 	}
 	role.Description = description.String
+	if parentRoleID.Valid {
+		role.ParentRoleID = &parentRoleID.String
+	}
 	return &role, nil
 }
 
@@ -82,8 +94,8 @@ func (r *rbacRepository) CreateRole(role *Role) error {
 	role.ID = uuid.New().String()
 	role.CreatedAt = time.Now()
 
-	query := `INSERT INTO roles (id, name, description, created_at) VALUES ($1, $2, $3, $4)`
-	_, err := r.db.Exec(query, role.ID, role.Name, role.Description, role.CreatedAt)
+	query := `INSERT INTO roles (id, name, description, parent_role_id, level, created_at) VALUES ($1, $2, $3, $4, $5, $6)`
+	_, err := r.db.Exec(query, role.ID, role.Name, role.Description, role.ParentRoleID, role.Level, role.CreatedAt)
 	if err != nil {
 		return errors.Wrap(err, errors.DatabaseInsertFailed)
 	}
@@ -91,8 +103,8 @@ func (r *rbacRepository) CreateRole(role *Role) error {
 }
 
 func (r *rbacRepository) UpdateRole(role *Role) error {
-	query := `UPDATE roles SET name = $2, description = $3 WHERE id = $1`
-	result, err := r.db.Exec(query, role.ID, role.Name, role.Description)
+	query := `UPDATE roles SET name = $2, description = $3, parent_role_id = $4, level = $5 WHERE id = $1`
+	result, err := r.db.Exec(query, role.ID, role.Name, role.Description, role.ParentRoleID, role.Level)
 	if err != nil {
 		return errors.Wrap(err, errors.DatabaseUpdateFailed)
 	}
@@ -365,4 +377,174 @@ func (r *rbacRepository) HasPermission(userID, permissionName string) (bool, err
 		}
 	}
 	return false, nil
+}
+
+// ==================== Hierarchical Role Operations ====================
+
+func (r *rbacRepository) GetRoleHierarchy() ([]RoleWithChildren, error) {
+	roles, err := r.GetRoles()
+	if err != nil {
+		return nil, err
+	}
+
+	// Build a map for quick lookup
+	roleMap := make(map[string]*RoleWithChildren)
+	for _, role := range roles {
+		roleMap[role.ID] = &RoleWithChildren{Role: role}
+	}
+
+	// Build hierarchy
+	var rootRoles []RoleWithChildren
+	for _, role := range roles {
+		if role.ParentRoleID == nil {
+			rootRoles = append(rootRoles, *roleMap[role.ID])
+		} else {
+			if parent, ok := roleMap[*role.ParentRoleID]; ok {
+				parent.Children = append(parent.Children, *roleMap[role.ID])
+			}
+		}
+	}
+
+	// Rebuild with proper nested children
+	return r.buildHierarchy(roles, nil), nil
+}
+
+func (r *rbacRepository) buildHierarchy(roles []Role, parentID *string) []RoleWithChildren {
+	var result []RoleWithChildren
+
+	for _, role := range roles {
+		// Check if this role's parent matches the given parentID
+		isMatch := false
+		if parentID == nil && role.ParentRoleID == nil {
+			isMatch = true
+		} else if parentID != nil && role.ParentRoleID != nil && *parentID == *role.ParentRoleID {
+			isMatch = true
+		}
+
+		if isMatch {
+			children := r.buildHierarchy(roles, &role.ID)
+			result = append(result, RoleWithChildren{
+				Role:     role,
+				Children: children,
+			})
+		}
+	}
+
+	return result
+}
+
+func (r *rbacRepository) GetRoleAncestors(roleID string) ([]Role, error) {
+	query := `
+		SELECT id, name, description, parent_role_id, COALESCE(level, 0), created_at
+		FROM roles
+		WHERE id IN (SELECT ancestor_id FROM get_role_ancestors($1))
+		ORDER BY level DESC
+	`
+	rows, err := r.db.Query(query, roleID)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer rows.Close()
+
+	var roles []Role
+	for rows.Next() {
+		var role Role
+		var description sql.NullString
+		var parentRoleID sql.NullString
+		if err := rows.Scan(&role.ID, &role.Name, &description, &parentRoleID, &role.Level, &role.CreatedAt); err != nil {
+			return nil, errors.Wrap(err, errors.DatabaseScanFailed)
+		}
+		role.Description = description.String
+		if parentRoleID.Valid {
+			role.ParentRoleID = &parentRoleID.String
+		}
+		roles = append(roles, role)
+	}
+
+	return roles, nil
+}
+
+func (r *rbacRepository) GetRoleDescendants(roleID string) ([]Role, error) {
+	query := `
+		SELECT id, name, description, parent_role_id, COALESCE(level, 0), created_at
+		FROM roles
+		WHERE id IN (SELECT descendant_id FROM get_role_descendants($1))
+		ORDER BY level
+	`
+	rows, err := r.db.Query(query, roleID)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer rows.Close()
+
+	var roles []Role
+	for rows.Next() {
+		var role Role
+		var description sql.NullString
+		var parentRoleID sql.NullString
+		if err := rows.Scan(&role.ID, &role.Name, &description, &parentRoleID, &role.Level, &role.CreatedAt); err != nil {
+			return nil, errors.Wrap(err, errors.DatabaseScanFailed)
+		}
+		role.Description = description.String
+		if parentRoleID.Valid {
+			role.ParentRoleID = &parentRoleID.String
+		}
+		roles = append(roles, role)
+	}
+
+	return roles, nil
+}
+
+func (r *rbacRepository) GetRolePermissionsWithInheritance(roleID string) ([]InheritedPermission, error) {
+	query := `
+		SELECT permission_id, permission_name, resource, action, is_inherited
+		FROM role_permissions_with_inheritance
+		WHERE role_id = $1
+		ORDER BY resource, action
+	`
+	rows, err := r.db.Query(query, roleID)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer rows.Close()
+
+	var permissions []InheritedPermission
+	for rows.Next() {
+		var perm InheritedPermission
+		if err := rows.Scan(&perm.ID, &perm.Name, &perm.Resource, &perm.Action, &perm.IsInherited); err != nil {
+			return nil, errors.Wrap(err, errors.DatabaseScanFailed)
+		}
+		permissions = append(permissions, perm)
+	}
+
+	return permissions, nil
+}
+
+func (r *rbacRepository) SetParentRole(roleID, parentRoleID string) error {
+	// Get parent role level
+	var parentLevel int
+	if parentRoleID != "" {
+		parent, err := r.GetRoleByID(parentRoleID)
+		if err != nil {
+			return err
+		}
+		parentLevel = parent.Level + 1
+	}
+
+	query := `UPDATE roles SET parent_role_id = $2, level = $3 WHERE id = $1`
+	var parentPtr *string
+	if parentRoleID != "" {
+		parentPtr = &parentRoleID
+	}
+
+	result, err := r.db.Exec(query, roleID, parentPtr, parentLevel)
+	if err != nil {
+		return errors.Wrap(err, errors.DatabaseUpdateFailed)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.New(errors.ResourceNotFound)
+	}
+	return nil
 }

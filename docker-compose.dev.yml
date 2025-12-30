@@ -32,7 +32,7 @@ services:
       - JWT_REFRESH_EXPIRY=168h
       - RATE_LIMIT_MAX=1000
       - RATE_LIMIT_WINDOW=1m
-      - BCRYPT_COST=10
+      - BCRYPT_COST=12
     volumes:
       # Mount source code for hot reload
       - .:/app
