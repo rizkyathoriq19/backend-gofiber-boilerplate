@@ -1,5 +1,98 @@
 basePath: /api/v1
 definitions:
+  docs.AlertDocResponse:
+    description: Alert information
+    properties:
+      acknowledged_at:
+        type: string
+      assigned_staff:
+        example: John Nurse
+        type: string
+      assigned_staff_id:
+        type: string
+      created_at:
+        type: string
+      detected_keywords:
+        items:
+          type: string
+        type: array
+      device_id:
+        type: string
+      escalation_count:
+        example: 0
+        type: integer
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      message:
+        example: Patient requesting assistance
+        type: string
+      patient_id:
+        type: string
+      patient_name:
+        example: Jane Doe
+        type: string
+      priority:
+        example: high
+        type: string
+      resolved_at:
+        type: string
+      room_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      room_name:
+        example: Room 101
+        type: string
+      status:
+        example: pending
+        type: string
+      type:
+        example: voice_call
+        type: string
+      updated_at:
+        type: string
+    type: object
+  docs.AlertHistoryDocResponse:
+    description: Alert history entry
+    properties:
+      action:
+        example: acknowledged
+        type: string
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      new_status:
+        example: acknowledged
+        type: string
+      notes:
+        example: Nurse on the way
+        type: string
+      previous_status:
+        example: pending
+        type: string
+    type: object
+  docs.AlertListDocResponse:
+    description: Paginated alert list
+    properties:
+      alerts:
+        items:
+          $ref: '#/definitions/docs.AlertDocResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 50
+        type: integer
+      total_pages:
+        example: 5
+        type: integer
+    type: object
   docs.AssignPermissionRequest:
     description: Permission assignment request
     properties:
@@ -51,6 +144,89 @@ definitions:
     required:
     - name
     type: object
+  docs.DeviceDocResponse:
+    description: Device information
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      last_heartbeat:
+        type: string
+      name:
+        example: Room 101 Microphone
+        type: string
+      room_id:
+        type: string
+      serial_number:
+        example: MIC-001
+        type: string
+      status:
+        example: online
+        type: string
+      type:
+        example: microphone
+        type: string
+      updated_at:
+        type: string
+    type: object
+  docs.DeviceListDocResponse:
+    description: Paginated device list
+    properties:
+      devices:
+        items:
+          $ref: '#/definitions/docs.DeviceDocResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total:
+        example: 50
+        type: integer
+      total_pages:
+        example: 5
+        type: integer
+    type: object
+  docs.DeviceWithAPIKeyDocResponse:
+    description: Device with API key (only on registration)
+    properties:
+      api_key:
+        example: mp_abc123def456...
+        type: string
+      config:
+        additionalProperties: true
+        type: object
+      created_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      last_heartbeat:
+        type: string
+      name:
+        example: Room 101 Microphone
+        type: string
+      room_id:
+        type: string
+      serial_number:
+        example: MIC-001
+        type: string
+      status:
+        example: online
+        type: string
+      type:
+        example: microphone
+        type: string
+      updated_at:
+        type: string
+    type: object
   docs.ErrorResponse:
     description: Standard error response wrapper
     properties:
@@ -81,6 +257,64 @@ definitions:
     required:
     - email
     - password
+    type: object
+  docs.PatientDocResponse:
+    description: Patient information
+    properties:
+      admission_date:
+        type: string
+      condition_level:
+        example: stable
+        type: string
+      created_at:
+        type: string
+      diagnosis:
+        example: Pneumonia
+        type: string
+      discharge_date:
+        type: string
+      gender:
+        example: female
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      medical_record_number:
+        example: MRN-001
+        type: string
+      name:
+        example: Jane Doe
+        type: string
+      room_id:
+        type: string
+      room_name:
+        example: Room 101
+        type: string
+      room_type:
+        example: patient_room
+        type: string
+      updated_at:
+        type: string
+    type: object
+  docs.PatientListDocResponse:
+    description: Paginated patient list
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      patients:
+        items:
+          $ref: '#/definitions/docs.PatientDocResponse'
+        type: array
+      total:
+        example: 200
+        type: integer
+      total_pages:
+        example: 20
+        type: integer
     type: object
   docs.PermissionResponse:
     description: Permission information
@@ -145,6 +379,128 @@ definitions:
       name:
         example: admin
         type: string
+    type: object
+  docs.RoomAssignmentDocResponse:
+    description: Staff room assignment
+    properties:
+      assigned_at:
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_primary:
+        example: true
+        type: boolean
+      room_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  docs.RoomDocResponse:
+    description: Room information
+    properties:
+      building:
+        example: Main
+        type: string
+      capacity:
+        example: 2
+        type: integer
+      created_at:
+        type: string
+      floor:
+        example: "1"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      name:
+        example: Room 101
+        type: string
+      type:
+        example: patient_room
+        type: string
+      updated_at:
+        type: string
+    type: object
+  docs.RoomListDocResponse:
+    description: Paginated room list
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      rooms:
+        items:
+          $ref: '#/definitions/docs.RoomDocResponse'
+        type: array
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
+  docs.StaffDocResponse:
+    description: Staff information
+    properties:
+      created_at:
+        type: string
+      department:
+        example: ICU
+        type: string
+      employee_id:
+        example: EMP-001
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      on_duty:
+        example: true
+        type: boolean
+      phone:
+        example: "+62812345678"
+        type: string
+      shift:
+        example: morning
+        type: string
+      type:
+        example: nurse
+        type: string
+      updated_at:
+        type: string
+      user_email:
+        example: john@hospital.com
+        type: string
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      user_name:
+        example: John Doe
+        type: string
+    type: object
+  docs.StaffListDocResponse:
+    description: Paginated staff list
+    properties:
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      staff:
+        items:
+          $ref: '#/definitions/docs.StaffDocResponse'
+        type: array
+      total:
+        example: 25
+        type: integer
+      total_pages:
+        example: 3
+        type: integer
     type: object
   docs.SuccessResponse:
     description: Standard success response wrapper
@@ -217,7 +573,398 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-host: localhost:8000
+  internal_module_alert.AlertPriority:
+    enum:
+    - critical
+    - high
+    - medium
+    - low
+    type: string
+    x-enum-varnames:
+    - PriorityCritical
+    - PriorityHigh
+    - PriorityMedium
+    - PriorityLow
+  internal_module_alert.AlertType:
+    enum:
+    - voice_call
+    - button_press
+    - emergency
+    - system
+    - scheduled
+    type: string
+    x-enum-varnames:
+    - AlertTypeVoiceCall
+    - AlertTypeButtonPress
+    - AlertTypeEmergency
+    - AlertTypeSystem
+    - AlertTypeScheduled
+  internal_module_alert.CreateAlertRequest:
+    properties:
+      message:
+        type: string
+      patient_id:
+        type: string
+      priority:
+        allOf:
+        - $ref: '#/definitions/internal_module_alert.AlertPriority'
+        enum:
+        - critical
+        - high
+        - medium
+        - low
+      room_id:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/internal_module_alert.AlertType'
+        enum:
+        - voice_call
+        - button_press
+        - emergency
+        - system
+        - scheduled
+    required:
+    - room_id
+    - type
+    type: object
+  internal_module_alert.ResolveAlertRequest:
+    properties:
+      notes:
+        type: string
+    type: object
+  internal_module_device.DeviceStatus:
+    enum:
+    - online
+    - offline
+    - maintenance
+    - error
+    type: string
+    x-enum-varnames:
+    - DeviceStatusOnline
+    - DeviceStatusOffline
+    - DeviceStatusMaintenance
+    - DeviceStatusError
+  internal_module_device.DeviceType:
+    enum:
+    - microphone
+    - teleprompter
+    - button
+    - sensor
+    type: string
+    x-enum-varnames:
+    - DeviceTypeMicrophone
+    - DeviceTypeTeleprompter
+    - DeviceTypeButton
+    - DeviceTypeSensor
+  internal_module_device.RegisterDeviceRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      name:
+        maxLength: 100
+        type: string
+      room_id:
+        type: string
+      serial_number:
+        maxLength: 100
+        minLength: 1
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/internal_module_device.DeviceType'
+        enum:
+        - microphone
+        - teleprompter
+        - button
+        - sensor
+    required:
+    - serial_number
+    - type
+    type: object
+  internal_module_device.UpdateDeviceRequest:
+    properties:
+      config:
+        additionalProperties: true
+        type: object
+      name:
+        maxLength: 100
+        type: string
+      room_id:
+        type: string
+    type: object
+  internal_module_device.UpdateDeviceStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_module_device.DeviceStatus'
+        enum:
+        - online
+        - offline
+        - maintenance
+        - error
+    required:
+    - status
+    type: object
+  internal_module_patient.AdmitPatientRequest:
+    properties:
+      condition_level:
+        allOf:
+        - $ref: '#/definitions/internal_module_patient.ConditionLevel'
+        enum:
+        - critical
+        - serious
+        - moderate
+        - stable
+        - good
+      date_of_birth:
+        type: string
+      diagnosis:
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      medical_record_number:
+        maxLength: 50
+        minLength: 1
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      notes:
+        type: string
+      room_id:
+        type: string
+    required:
+    - medical_record_number
+    - name
+    type: object
+  internal_module_patient.ConditionLevel:
+    enum:
+    - critical
+    - serious
+    - moderate
+    - stable
+    - good
+    type: string
+    x-enum-varnames:
+    - ConditionCritical
+    - ConditionSerious
+    - ConditionModerate
+    - ConditionStable
+    - ConditionGood
+  internal_module_patient.UpdateConditionRequest:
+    properties:
+      condition_level:
+        allOf:
+        - $ref: '#/definitions/internal_module_patient.ConditionLevel'
+        enum:
+        - critical
+        - serious
+        - moderate
+        - stable
+        - good
+    required:
+    - condition_level
+    type: object
+  internal_module_patient.UpdatePatientRequest:
+    properties:
+      condition_level:
+        allOf:
+        - $ref: '#/definitions/internal_module_patient.ConditionLevel'
+        enum:
+        - critical
+        - serious
+        - moderate
+        - stable
+        - good
+      diagnosis:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      notes:
+        type: string
+      room_id:
+        type: string
+    type: object
+  internal_module_room.CreateRoomRequest:
+    properties:
+      building:
+        maxLength: 100
+        type: string
+      capacity:
+        maximum: 50
+        minimum: 0
+        type: integer
+      floor:
+        maxLength: 20
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/internal_module_room.RoomType'
+        enum:
+        - patient_room
+        - nurse_station
+        - icu
+        - emergency
+        - operating_room
+    required:
+    - floor
+    - name
+    - type
+    type: object
+  internal_module_room.RoomType:
+    enum:
+    - patient_room
+    - nurse_station
+    - icu
+    - emergency
+    - operating_room
+    type: string
+    x-enum-varnames:
+    - RoomTypePatientRoom
+    - RoomTypeNurseStation
+    - RoomTypeICU
+    - RoomTypeEmergency
+    - RoomTypeOperatingRoom
+  internal_module_room.UpdateRoomRequest:
+    properties:
+      building:
+        maxLength: 100
+        type: string
+      capacity:
+        maximum: 50
+        minimum: 0
+        type: integer
+      floor:
+        maxLength: 20
+        type: string
+      is_active:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/internal_module_room.RoomType'
+        enum:
+        - patient_room
+        - nurse_station
+        - icu
+        - emergency
+        - operating_room
+    type: object
+  internal_module_staff.AssignRoomRequest:
+    properties:
+      is_primary:
+        type: boolean
+      room_id:
+        type: string
+    required:
+    - room_id
+    type: object
+  internal_module_staff.CreateStaffRequest:
+    properties:
+      department:
+        maxLength: 100
+        type: string
+      employee_id:
+        maxLength: 50
+        minLength: 1
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+      shift:
+        allOf:
+        - $ref: '#/definitions/internal_module_staff.ShiftType'
+        enum:
+        - morning
+        - afternoon
+        - night
+        - on_call
+      type:
+        allOf:
+        - $ref: '#/definitions/internal_module_staff.StaffType'
+        enum:
+        - nurse
+        - doctor
+        - manager
+        - admin
+      user_id:
+        type: string
+    required:
+    - employee_id
+    - type
+    - user_id
+    type: object
+  internal_module_staff.ShiftType:
+    enum:
+    - morning
+    - afternoon
+    - night
+    - on_call
+    type: string
+    x-enum-varnames:
+    - ShiftMorning
+    - ShiftAfternoon
+    - ShiftNight
+    - ShiftOnCall
+  internal_module_staff.StaffType:
+    enum:
+    - nurse
+    - doctor
+    - manager
+    - admin
+    type: string
+    x-enum-varnames:
+    - StaffTypeNurse
+    - StaffTypeDoctor
+    - StaffTypeManager
+    - StaffTypeAdmin
+  internal_module_staff.UpdateShiftRequest:
+    properties:
+      shift:
+        allOf:
+        - $ref: '#/definitions/internal_module_staff.ShiftType'
+        enum:
+        - morning
+        - afternoon
+        - night
+        - on_call
+    required:
+    - shift
+    type: object
+  internal_module_staff.UpdateStaffRequest:
+    properties:
+      department:
+        maxLength: 100
+        type: string
+      phone:
+        maxLength: 20
+        type: string
+      shift:
+        allOf:
+        - $ref: '#/definitions/internal_module_staff.ShiftType'
+        enum:
+        - morning
+        - afternoon
+        - night
+        - on_call
+    type: object
+host: localhost:3002
 info:
   contact:
     email: support@example.com
@@ -230,6 +977,277 @@ info:
   title: Go Fiber Boilerplate API
   version: "1.0"
 paths:
+  /alerts:
+    get:
+      consumes:
+      - application/json
+      description: Returns all alerts with optional filters
+      parameters:
+      - description: Room ID filter
+        in: query
+        name: room_id
+        type: string
+      - description: Patient ID filter
+        in: query
+        name: patient_id
+        type: string
+      - description: Alert type filter
+        in: query
+        name: type
+        type: string
+      - description: Priority filter
+        in: query
+        name: priority
+        type: string
+      - description: Status filter
+        in: query
+        name: status
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.AlertListDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all alerts
+      tags:
+      - Alerts
+    post:
+      consumes:
+      - application/json
+      description: Creates a new nurse call alert
+      parameters:
+      - description: Alert data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_alert.CreateAlertRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.AlertDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new alert
+      tags:
+      - Alerts
+  /alerts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Returns an alert by ID
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.AlertDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get an alert by ID
+      tags:
+      - Alerts
+  /alerts/{id}/acknowledge:
+    post:
+      consumes:
+      - application/json
+      description: Acknowledges an alert as a staff member
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Acknowledge an alert
+      tags:
+      - Alerts
+  /alerts/{id}/history:
+    get:
+      consumes:
+      - application/json
+      description: Returns the history of an alert
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.AlertHistoryDocResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get alert history
+      tags:
+      - Alerts
+  /alerts/{id}/resolve:
+    post:
+      consumes:
+      - application/json
+      description: Resolves an alert
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Resolution notes
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_alert.ResolveAlertRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Resolve an alert
+      tags:
+      - Alerts
+  /alerts/active:
+    get:
+      consumes:
+      - application/json
+      description: Returns all active (unresolved) alerts sorted by priority
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.AlertDocResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get active alerts
+      tags:
+      - Alerts
   /auth/login:
     post:
       consumes:
@@ -476,6 +1494,1188 @@ paths:
       summary: Register new user
       tags:
       - Auth
+  /devices:
+    get:
+      consumes:
+      - application/json
+      description: Returns all devices with optional filters
+      parameters:
+      - description: Room ID filter
+        in: query
+        name: room_id
+        type: string
+      - description: Device type filter
+        in: query
+        name: type
+        type: string
+      - description: Device status filter
+        in: query
+        name: status
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.DeviceListDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all devices
+      tags:
+      - Devices
+    post:
+      consumes:
+      - application/json
+      description: Registers a new device and returns API key (save it, won't be shown
+        again)
+      parameters:
+      - description: Device data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_device.RegisterDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.DeviceWithAPIKeyDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Register a new device
+      tags:
+      - Devices
+  /devices/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a device by ID
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a device
+      tags:
+      - Devices
+    get:
+      consumes:
+      - application/json
+      description: Returns a device by its ID
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.DeviceDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a device by ID
+      tags:
+      - Devices
+    put:
+      consumes:
+      - application/json
+      description: Updates a device by ID
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Device update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_device.UpdateDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.DeviceDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a device
+      tags:
+      - Devices
+  /devices/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Updates a device status (online, offline, maintenance, error)
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_device.UpdateDeviceStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update device status
+      tags:
+      - Devices
+  /devices/heartbeat:
+    post:
+      consumes:
+      - application/json
+      description: Updates device last heartbeat timestamp
+      parameters:
+      - description: Device API Key
+        in: header
+        name: X-API-Key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      summary: Device heartbeat
+      tags:
+      - Devices
+  /patients:
+    get:
+      consumes:
+      - application/json
+      description: Returns all patients with optional filters
+      parameters:
+      - description: Room ID filter
+        in: query
+        name: room_id
+        type: string
+      - description: Condition level filter
+        in: query
+        name: condition_level
+        type: string
+      - description: Admission status filter
+        in: query
+        name: is_admitted
+        type: boolean
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.PatientListDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all patients
+      tags:
+      - Patients
+    post:
+      consumes:
+      - application/json
+      description: Admits a new patient to the hospital
+      parameters:
+      - description: Patient data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_patient.AdmitPatientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.PatientDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Admit a new patient
+      tags:
+      - Patients
+  /patients/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a patient by ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a patient
+      tags:
+      - Patients
+    get:
+      consumes:
+      - application/json
+      description: Returns a patient by ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.PatientDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a patient by ID
+      tags:
+      - Patients
+    put:
+      consumes:
+      - application/json
+      description: Updates a patient by ID
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Patient update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_patient.UpdatePatientRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.PatientDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a patient
+      tags:
+      - Patients
+  /patients/{id}/condition:
+    put:
+      consumes:
+      - application/json
+      description: Updates a patient's condition level
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Condition update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_patient.UpdateConditionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update patient condition level
+      tags:
+      - Patients
+  /patients/{id}/discharge:
+    post:
+      consumes:
+      - application/json
+      description: Discharges a patient from the hospital
+      parameters:
+      - description: Patient ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Discharge a patient
+      tags:
+      - Patients
+  /rooms:
+    get:
+      consumes:
+      - application/json
+      description: Returns all rooms with optional filters and pagination
+      parameters:
+      - description: Room type filter
+        in: query
+        name: type
+        type: string
+      - description: Floor filter
+        in: query
+        name: floor
+        type: string
+      - description: Building filter
+        in: query
+        name: building
+        type: string
+      - description: Active status filter
+        in: query
+        name: is_active
+        type: boolean
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoomListDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all rooms
+      tags:
+      - Rooms
+    post:
+      consumes:
+      - application/json
+      description: Creates a new room in the hospital
+      parameters:
+      - description: Room data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_room.CreateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoomDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new room
+      tags:
+      - Rooms
+  /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a room by ID
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a room
+      tags:
+      - Rooms
+    get:
+      consumes:
+      - application/json
+      description: Returns a room by its ID
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoomDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a room by ID
+      tags:
+      - Rooms
+    put:
+      consumes:
+      - application/json
+      description: Updates a room by ID
+      parameters:
+      - description: Room ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Room update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_room.UpdateRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.RoomDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a room
+      tags:
+      - Rooms
+  /staff:
+    get:
+      consumes:
+      - application/json
+      description: Returns all staff members with optional filters
+      parameters:
+      - description: Staff type filter
+        in: query
+        name: type
+        type: string
+      - description: Department filter
+        in: query
+        name: department
+        type: string
+      - description: Shift filter
+        in: query
+        name: shift
+        type: string
+      - description: On duty filter
+        in: query
+        name: on_duty
+        type: boolean
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.StaffListDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all staff members
+      tags:
+      - Staff
+    post:
+      consumes:
+      - application/json
+      description: Creates a new staff profile for a user
+      parameters:
+      - description: Staff data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_staff.CreateStaffRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.StaffDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new staff member
+      tags:
+      - Staff
+  /staff/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a staff member by ID
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a staff member
+      tags:
+      - Staff
+    get:
+      consumes:
+      - application/json
+      description: Returns a staff member by ID
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.StaffDocResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a staff member by ID
+      tags:
+      - Staff
+    put:
+      consumes:
+      - application/json
+      description: Updates a staff member by ID
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Staff update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_staff.UpdateStaffRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.StaffDocResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a staff member
+      tags:
+      - Staff
+  /staff/{id}/rooms:
+    get:
+      consumes:
+      - application/json
+      description: Returns all room assignments for a staff member
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.RoomAssignmentDocResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get staff room assignments
+      tags:
+      - Staff
+    post:
+      consumes:
+      - application/json
+      description: Assigns a staff member to a room
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Room assignment data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_staff.AssignRoomRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Assign staff to room
+      tags:
+      - Staff
+  /staff/{id}/rooms/{roomId}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a staff member from a room assignment
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Room ID
+        in: path
+        name: roomId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove staff from room
+      tags:
+      - Staff
+  /staff/{id}/shift:
+    put:
+      consumes:
+      - application/json
+      description: Updates a staff member's shift
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Shift update data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_staff.UpdateShiftRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update staff shift
+      tags:
+      - Staff
+  /staff/{id}/toggle-duty:
+    post:
+      consumes:
+      - application/json
+      description: Toggles the on-duty status of a staff member
+      parameters:
+      - description: Staff ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Toggle on-duty status
+      tags:
+      - Staff
+  /staff/on-duty:
+    get:
+      consumes:
+      - application/json
+      description: Returns all on-duty staff, optionally filtered by type
+      parameters:
+      - description: Staff type filter (nurse, doctor)
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/docs.StaffDocResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get on-duty staff
+      tags:
+      - Staff
   /super-admin/permissions:
     get:
       consumes:

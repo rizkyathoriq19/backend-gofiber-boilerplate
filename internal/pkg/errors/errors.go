@@ -26,6 +26,8 @@ const (
 	InvalidToken         = enum.InvalidToken
 	TokenExpired         = enum.TokenExpired
 	RateLimitExceeded    = enum.RateLimitExceeded
+	InvalidAPIKey        = enum.InvalidAPIKey
+	ResourceAlreadyExists = enum.ResourceAlreadyExists
 
 	// User/Account Errors
 	UsernameExists     = enum.UsernameExists

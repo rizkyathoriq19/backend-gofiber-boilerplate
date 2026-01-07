@@ -9,19 +9,21 @@ const (
 	DataNotFound ErrorCode = 2
 
 	// Client Errors (1000-1099)
-	InvalidRequest       ErrorCode = -1000
-	InvalidRequestBody   ErrorCode = -1001
-	MissingRequiredField ErrorCode = -1002
-	InvalidFormat        ErrorCode = -1003
-	InvalidCredentials   ErrorCode = -1004
-	Unauthorized         ErrorCode = -1005
-	Forbidden            ErrorCode = -1006
-	ResourceNotFound     ErrorCode = -1007
-	Conflict             ErrorCode = -1008
-	ValidationFailed     ErrorCode = -1009
-	InvalidToken         ErrorCode = -1010
-	TokenExpired         ErrorCode = -1011
-	RateLimitExceeded    ErrorCode = -1012
+	InvalidRequest        ErrorCode = -1000
+	InvalidRequestBody    ErrorCode = -1001
+	MissingRequiredField  ErrorCode = -1002
+	InvalidFormat         ErrorCode = -1003
+	InvalidCredentials    ErrorCode = -1004
+	Unauthorized          ErrorCode = -1005
+	Forbidden             ErrorCode = -1006
+	ResourceNotFound      ErrorCode = -1007
+	Conflict              ErrorCode = -1008
+	ValidationFailed      ErrorCode = -1009
+	InvalidToken          ErrorCode = -1010
+	TokenExpired          ErrorCode = -1011
+	RateLimitExceeded     ErrorCode = -1012
+	InvalidAPIKey         ErrorCode = -1013
+	ResourceAlreadyExists ErrorCode = -1014
 
 	// User/Account Errors (1100-1199)
 	UsernameExists     ErrorCode = -1100
@@ -84,19 +86,21 @@ func (ec ErrorCode) String() string {
 		DataNotFound: "DATA_NOT_FOUND",
 
 		// Client Errors
-		InvalidRequest:       "INVALID_REQUEST",
-		InvalidRequestBody:   "INVALID_REQUEST_BODY",
-		MissingRequiredField: "MISSING_REQUIRED_FIELD",
-		InvalidFormat:        "INVALID_FORMAT",
-		InvalidCredentials:   "INVALID_CREDENTIALS",
-		Unauthorized:         "UNAUTHORIZED",
-		Forbidden:            "FORBIDDEN",
-		ResourceNotFound:     "RESOURCE_NOT_FOUND",
-		Conflict:             "CONFLICT",
-		ValidationFailed:     "VALIDATION_FAILED",
-		InvalidToken:         "INVALID_TOKEN",
-		TokenExpired:         "TOKEN_EXPIRED",
-		RateLimitExceeded:    "RATE_LIMIT_EXCEEDED",
+		InvalidRequest:        "INVALID_REQUEST",
+		InvalidRequestBody:    "INVALID_REQUEST_BODY",
+		MissingRequiredField:  "MISSING_REQUIRED_FIELD",
+		InvalidFormat:         "INVALID_FORMAT",
+		InvalidCredentials:    "INVALID_CREDENTIALS",
+		Unauthorized:          "UNAUTHORIZED",
+		Forbidden:             "FORBIDDEN",
+		ResourceNotFound:      "RESOURCE_NOT_FOUND",
+		Conflict:              "CONFLICT",
+		ValidationFailed:      "VALIDATION_FAILED",
+		InvalidToken:          "INVALID_TOKEN",
+		TokenExpired:          "TOKEN_EXPIRED",
+		RateLimitExceeded:     "RATE_LIMIT_EXCEEDED",
+		InvalidAPIKey:         "INVALID_API_KEY",
+		ResourceAlreadyExists: "RESOURCE_ALREADY_EXISTS",
 
 		// User/Account Errors
 		UsernameExists:     "USERNAME_EXISTS",
@@ -161,19 +165,21 @@ func (ec ErrorCode) MessageID() string {
 		DataNotFound: "Data tidak ditemukan",
 
 		// Client Errors
-		InvalidRequest:       "Format permintaan tidak valid",
-		InvalidRequestBody:   "Isi permintaan tidak valid",
-		MissingRequiredField: "Field wajib tidak lengkap",
-		InvalidFormat:        "Format data tidak sesuai",
-		InvalidCredentials:   "Kredensial tidak valid",
-		Unauthorized:         "Tidak memiliki akses",
-		Forbidden:            "Akses ditolak",
-		ResourceNotFound:     "Resource tidak ditemukan",
-		Conflict:             "Data sudah ada",
-		ValidationFailed:     "Validasi gagal",
-		InvalidToken:         "Token tidak valid",
-		TokenExpired:         "Token sudah kedaluwarsa",
-		RateLimitExceeded:    "Batas permintaan terlampaui",
+		InvalidRequest:        "Format permintaan tidak valid",
+		InvalidRequestBody:    "Isi permintaan tidak valid",
+		MissingRequiredField:  "Field wajib tidak lengkap",
+		InvalidFormat:         "Format data tidak sesuai",
+		InvalidCredentials:    "Kredensial tidak valid",
+		Unauthorized:          "Tidak memiliki akses",
+		Forbidden:             "Akses ditolak",
+		ResourceNotFound:      "Resource tidak ditemukan",
+		Conflict:              "Data sudah ada",
+		ValidationFailed:      "Validasi gagal",
+		InvalidToken:          "Token tidak valid",
+		TokenExpired:          "Token sudah kedaluwarsa",
+		RateLimitExceeded:     "Batas permintaan terlampaui",
+		InvalidAPIKey:         "API key tidak valid",
+		ResourceAlreadyExists: "Resource sudah ada",
 
 		// User/Account Errors
 		UsernameExists:     "Username sudah digunakan",
@@ -238,19 +244,21 @@ func (ec ErrorCode) MessageEN() string {
 		DataNotFound: "Data not found",
 
 		// Client Errors
-		InvalidRequest:       "Invalid request format",
-		InvalidRequestBody:   "Invalid request body",
-		MissingRequiredField: "Missing required field",
-		InvalidFormat:        "Invalid data format",
-		InvalidCredentials:   "Invalid credentials",
-		Unauthorized:         "Unauthorized access",
-		Forbidden:            "Access forbidden",
-		ResourceNotFound:     "Resource not found",
-		Conflict:             "Resource already exists",
-		ValidationFailed:     "Validation failed",
-		InvalidToken:         "Invalid token",
-		TokenExpired:         "Token expired",
-		RateLimitExceeded:    "Rate limit exceeded",
+		InvalidRequest:        "Invalid request format",
+		InvalidRequestBody:    "Invalid request body",
+		MissingRequiredField:  "Missing required field",
+		InvalidFormat:         "Invalid data format",
+		InvalidCredentials:    "Invalid credentials",
+		Unauthorized:          "Unauthorized access",
+		Forbidden:             "Access forbidden",
+		ResourceNotFound:      "Resource not found",
+		Conflict:              "Resource already exists",
+		ValidationFailed:      "Validation failed",
+		InvalidToken:          "Invalid token",
+		TokenExpired:          "Token expired",
+		RateLimitExceeded:     "Rate limit exceeded",
+		InvalidAPIKey:         "Invalid API key",
+		ResourceAlreadyExists: "Resource already exists",
 
 		// User/Account Errors
 		UsernameExists:     "Username already exists",

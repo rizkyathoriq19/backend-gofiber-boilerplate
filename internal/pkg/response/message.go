@@ -38,6 +38,10 @@ var (
 		ID: "Data berhasil dibuat",
 		EN: "Data created successfully",
 	}
+	MsgDataRetrieved = BilingualMessage{
+		ID: "Data berhasil diambil",
+		EN: "Data retrieved successfully",
+	}
 	MsgDataUpdated = BilingualMessage{
 		ID: "Data berhasil diperbarui",
 		EN: "Data updated successfully",

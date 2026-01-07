@@ -125,3 +125,170 @@ type AssignRoleRequest struct {
 type AssignPermissionRequest struct {
 	PermissionID string `json:"permission_id" example:"550e8400-e29b-41d4-a716-446655440000" validate:"required,uuid"`
 }
+
+// ========== MEDIPROMPT Types ==========
+
+// RoomDocResponse represents room data
+// @Description Room information
+type RoomDocResponse struct {
+	ID        string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name      string    `json:"name" example:"Room 101"`
+	Type      string    `json:"type" example:"patient_room"`
+	Floor     string    `json:"floor" example:"1"`
+	Building  string    `json:"building" example:"Main"`
+	Capacity  int       `json:"capacity" example:"2"`
+	IsActive  bool      `json:"is_active" example:"true"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// RoomListDocResponse represents paginated room list
+// @Description Paginated room list
+type RoomListDocResponse struct {
+	Rooms      []RoomDocResponse `json:"rooms"`
+	Total      int               `json:"total" example:"100"`
+	Page       int               `json:"page" example:"1"`
+	Limit      int               `json:"limit" example:"10"`
+	TotalPages int               `json:"total_pages" example:"10"`
+}
+
+// DeviceDocResponse represents device data
+// @Description Device information
+type DeviceDocResponse struct {
+	ID            string                 `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomID        *string                `json:"room_id"`
+	Type          string                 `json:"type" example:"microphone"`
+	SerialNumber  string                 `json:"serial_number" example:"MIC-001"`
+	Name          string                 `json:"name" example:"Room 101 Microphone"`
+	Status        string                 `json:"status" example:"online"`
+	Config        map[string]interface{} `json:"config"`
+	LastHeartbeat *time.Time             `json:"last_heartbeat"`
+	CreatedAt     time.Time              `json:"created_at"`
+	UpdatedAt     time.Time              `json:"updated_at"`
+}
+
+// DeviceWithAPIKeyDocResponse includes API key
+// @Description Device with API key (only on registration)
+type DeviceWithAPIKeyDocResponse struct {
+	DeviceDocResponse
+	APIKey string `json:"api_key" example:"mp_abc123def456..."`
+}
+
+// DeviceListDocResponse represents paginated device list
+// @Description Paginated device list
+type DeviceListDocResponse struct {
+	Devices    []DeviceDocResponse `json:"devices"`
+	Total      int                 `json:"total" example:"50"`
+	Page       int                 `json:"page" example:"1"`
+	Limit      int                 `json:"limit" example:"10"`
+	TotalPages int                 `json:"total_pages" example:"5"`
+}
+
+// StaffDocResponse represents staff data
+// @Description Staff information
+type StaffDocResponse struct {
+	ID         string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UserID     string    `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	EmployeeID string    `json:"employee_id" example:"EMP-001"`
+	Type       string    `json:"type" example:"nurse"`
+	Department string    `json:"department" example:"ICU"`
+	Shift      string    `json:"shift" example:"morning"`
+	OnDuty     bool      `json:"on_duty" example:"true"`
+	Phone      string    `json:"phone" example:"+62812345678"`
+	UserName   string    `json:"user_name" example:"John Doe"`
+	UserEmail  string    `json:"user_email" example:"john@hospital.com"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// StaffListDocResponse represents paginated staff list
+// @Description Paginated staff list
+type StaffListDocResponse struct {
+	Staff      []StaffDocResponse `json:"staff"`
+	Total      int                `json:"total" example:"25"`
+	Page       int                `json:"page" example:"1"`
+	Limit      int                `json:"limit" example:"10"`
+	TotalPages int                `json:"total_pages" example:"3"`
+}
+
+// RoomAssignmentDocResponse represents room assignment
+// @Description Staff room assignment
+type RoomAssignmentDocResponse struct {
+	ID         string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomID     string    `json:"room_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	IsPrimary  bool      `json:"is_primary" example:"true"`
+	AssignedAt time.Time `json:"assigned_at"`
+}
+
+// PatientDocResponse represents patient data
+// @Description Patient information
+type PatientDocResponse struct {
+	ID                  string     `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomID              *string    `json:"room_id"`
+	MedicalRecordNumber string     `json:"medical_record_number" example:"MRN-001"`
+	Name                string     `json:"name" example:"Jane Doe"`
+	Gender              string     `json:"gender" example:"female"`
+	ConditionLevel      string     `json:"condition_level" example:"stable"`
+	Diagnosis           string     `json:"diagnosis" example:"Pneumonia"`
+	RoomName            string     `json:"room_name,omitempty" example:"Room 101"`
+	RoomType            string     `json:"room_type,omitempty" example:"patient_room"`
+	AdmissionDate       time.Time  `json:"admission_date"`
+	DischargeDate       *time.Time `json:"discharge_date"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+}
+
+// PatientListDocResponse represents paginated patient list
+// @Description Paginated patient list
+type PatientListDocResponse struct {
+	Patients   []PatientDocResponse `json:"patients"`
+	Total      int                  `json:"total" example:"200"`
+	Page       int                  `json:"page" example:"1"`
+	Limit      int                  `json:"limit" example:"10"`
+	TotalPages int                  `json:"total_pages" example:"20"`
+}
+
+// AlertDocResponse represents alert data
+// @Description Alert information
+type AlertDocResponse struct {
+	ID                string     `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomID            string     `json:"room_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	PatientID         *string    `json:"patient_id"`
+	DeviceID          *string    `json:"device_id"`
+	AssignedStaffID   *string    `json:"assigned_staff_id"`
+	Type              string     `json:"type" example:"voice_call"`
+	Priority          string     `json:"priority" example:"high"`
+	Status            string     `json:"status" example:"pending"`
+	Message           string     `json:"message" example:"Patient requesting assistance"`
+	DetectedKeywords  []string   `json:"detected_keywords,omitempty"`
+	EscalationCount   int        `json:"escalation_count" example:"0"`
+	RoomName          string     `json:"room_name" example:"Room 101"`
+	PatientName       string     `json:"patient_name,omitempty" example:"Jane Doe"`
+	AssignedStaff     string     `json:"assigned_staff,omitempty" example:"John Nurse"`
+	CreatedAt         time.Time  `json:"created_at"`
+	AcknowledgedAt    *time.Time `json:"acknowledged_at,omitempty"`
+	ResolvedAt        *time.Time `json:"resolved_at,omitempty"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
+// AlertListDocResponse represents paginated alert list
+// @Description Paginated alert list
+type AlertListDocResponse struct {
+	Alerts     []AlertDocResponse `json:"alerts"`
+	Total      int                `json:"total" example:"50"`
+	Page       int                `json:"page" example:"1"`
+	Limit      int                `json:"limit" example:"10"`
+	TotalPages int                `json:"total_pages" example:"5"`
+}
+
+// AlertHistoryDocResponse represents alert history entry
+// @Description Alert history entry
+type AlertHistoryDocResponse struct {
+	ID             string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Action         string    `json:"action" example:"acknowledged"`
+	PreviousStatus string    `json:"previous_status" example:"pending"`
+	NewStatus      string    `json:"new_status" example:"acknowledged"`
+	Notes          string    `json:"notes,omitempty" example:"Nurse on the way"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+

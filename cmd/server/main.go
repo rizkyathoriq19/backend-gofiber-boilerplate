@@ -10,7 +10,7 @@
 // @license.name  MIT
 // @license.url   https://opensource.org/licenses/MIT
 //
-// @host      localhost:8000
+// @host      localhost:3002
 // @BasePath  /api/v1
 //
 // @securityDefinitions.apikey BearerAuth
@@ -30,8 +30,13 @@ import (
 	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/database/redis"
 	"boilerplate-be/internal/middleware"
+	"boilerplate-be/internal/module/alert"
 	"boilerplate-be/internal/module/auth"
+	"boilerplate-be/internal/module/device"
+	"boilerplate-be/internal/module/patient"
 	"boilerplate-be/internal/module/rbac"
+	"boilerplate-be/internal/module/room"
+	"boilerplate-be/internal/module/staff"
 	"boilerplate-be/internal/pkg/errors"
 	"boilerplate-be/internal/pkg/response"
 	"boilerplate-be/internal/pkg/security"
@@ -83,14 +88,29 @@ func main() {
 	// ==================== Initialize Repositories ====================
 	authRepo := auth.NewAuthRepository(db, cacheHelper)
 	rbacRepo := rbac.NewRBACRepository(db, cacheHelper)
+	roomRepo := room.NewRoomRepository(db, cacheHelper)
+	deviceRepo := device.NewDeviceRepository(db, cacheHelper)
+	staffRepo := staff.NewStaffRepository(db, cacheHelper)
+	patientRepo := patient.NewPatientRepository(db, cacheHelper)
+	alertRepo := alert.NewAlertRepository(db, cacheHelper)
 
 	// ==================== Initialize Use Cases ====================
 	authUseCase := auth.NewAuthUseCase(authRepo, jwtManager, tokenManager)
 	rbacUseCase := rbac.NewRBACUseCase(rbacRepo)
+	roomUseCase := room.NewRoomUseCase(roomRepo)
+	deviceUseCase := device.NewDeviceUseCase(deviceRepo)
+	staffUseCase := staff.NewStaffUseCase(staffRepo)
+	patientUseCase := patient.NewPatientUseCase(patientRepo)
+	alertUseCase := alert.NewAlertUseCase(alertRepo, staffRepo, patientRepo, deviceRepo)
 
 	// ==================== Initialize Handlers ====================
 	authHandler := auth.NewAuthHandler(authUseCase)
 	rbacHandler := rbac.NewRBACHandler(rbacUseCase)
+	roomHandler := room.NewRoomHandler(roomUseCase)
+	deviceHandler := device.NewDeviceHandler(deviceUseCase)
+	staffHandler := staff.NewStaffHandler(staffUseCase)
+	patientHandler := patient.NewPatientHandler(patientUseCase)
+	alertHandler := alert.NewAlertHandler(alertUseCase)
 
 	// ==================== Initialize WebSocket ====================
 	wsHub := websocket.NewHub()
@@ -179,6 +199,64 @@ func main() {
 	superAdmin.Get("/roles/:id/permissions", rbacHandler.GetRolePermissions)
 	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
 	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
+
+	// ==================== MEDIPROMPT Protected Routes ====================
+	// All MEDIPROMPT routes require authentication
+	protected := api.Group("", middleware.AuthMiddleware(jwtManager, redisClient))
+
+	// Room routes (Admin/Manager only for write operations)
+	roomsGroup := protected.Group("/rooms")
+	roomsGroup.Get("", roomHandler.GetRooms)
+	roomsGroup.Get("/:id", roomHandler.GetRoom)
+	roomsGroup.Post("", roomHandler.CreateRoom)       // TODO: Add admin/manager middleware
+	roomsGroup.Put("/:id", roomHandler.UpdateRoom)    // TODO: Add admin/manager middleware
+	roomsGroup.Delete("/:id", roomHandler.DeleteRoom) // TODO: Add admin/manager middleware
+
+	// Device routes
+	devicesGroup := protected.Group("/devices")
+	devicesGroup.Get("", deviceHandler.GetDevices)
+	devicesGroup.Get("/:id", deviceHandler.GetDevice)
+	devicesGroup.Post("", deviceHandler.RegisterDevice) // Returns API key
+	devicesGroup.Put("/:id", deviceHandler.UpdateDevice)
+	devicesGroup.Put("/:id/status", deviceHandler.UpdateDeviceStatus)
+	devicesGroup.Delete("/:id", deviceHandler.DeleteDevice)
+
+	// Device heartbeat (uses X-API-Key, no JWT)
+	api.Post("/devices/heartbeat", deviceHandler.Heartbeat)
+
+	// Staff routes
+	staffGroup := protected.Group("/staff")
+	staffGroup.Get("", staffHandler.GetAllStaff)
+	staffGroup.Get("/on-duty", staffHandler.GetOnDutyStaff)
+	staffGroup.Get("/:id", staffHandler.GetStaff)
+	staffGroup.Post("", staffHandler.CreateStaff)
+	staffGroup.Put("/:id", staffHandler.UpdateStaff)
+	staffGroup.Put("/:id/shift", staffHandler.UpdateShift)
+	staffGroup.Post("/:id/toggle-duty", staffHandler.ToggleOnDuty)
+	staffGroup.Delete("/:id", staffHandler.DeleteStaff)
+	staffGroup.Get("/:id/rooms", staffHandler.GetRoomAssignments)
+	staffGroup.Post("/:id/rooms", staffHandler.AssignToRoom)
+	staffGroup.Delete("/:id/rooms/:roomId", staffHandler.RemoveFromRoom)
+
+	// Patient routes
+	patientsGroup := protected.Group("/patients")
+	patientsGroup.Get("", patientHandler.GetPatients)
+	patientsGroup.Get("/:id", patientHandler.GetPatient)
+	patientsGroup.Post("", patientHandler.AdmitPatient)
+	patientsGroup.Put("/:id", patientHandler.UpdatePatient)
+	patientsGroup.Put("/:id/condition", patientHandler.UpdateConditionLevel)
+	patientsGroup.Post("/:id/discharge", patientHandler.DischargePatient)
+	patientsGroup.Delete("/:id", patientHandler.DeletePatient)
+
+	// Alert routes
+	alertsGroup := protected.Group("/alerts")
+	alertsGroup.Get("", alertHandler.GetAlerts)
+	alertsGroup.Get("/active", alertHandler.GetActiveAlerts)
+	alertsGroup.Get("/:id", alertHandler.GetAlert)
+	alertsGroup.Post("", alertHandler.CreateAlert)
+	alertsGroup.Post("/:id/acknowledge", alertHandler.AcknowledgeAlert)
+	alertsGroup.Post("/:id/resolve", alertHandler.ResolveAlert)
+	alertsGroup.Get("/:id/history", alertHandler.GetAlertHistory)
 
 
 	// Health check - HTML UI
