@@ -10,6 +10,7 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 - 🐘 **PostgreSQL** - Database with migrations
 - 📝 **Swagger** - Auto-generated API docs
 - 🔒 **Security** - CORS, Helmet, rate limiting
+- 🔌 **WebSocket** - Real-time communication support
 
 ## Project Structure
 
@@ -22,6 +23,7 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 │   ├── module/
 │   │   ├── auth/            # Authentication
 │   │   └── rbac/            # Role-Based Access Control
+│   ├── websocket/           # WebSocket support
 │   └── pkg/                 # Shared utilities
 ├── migrations/              # Database migrations
 └── docs/                    # Swagger docs
@@ -84,6 +86,41 @@ docker-compose up -d
 | POST | `/api/v1/super-admin/roles` | Create role |
 | GET | `/api/v1/super-admin/permissions` | List permissions |
 | POST | `/api/v1/super-admin/roles/:id/permissions` | Assign permission |
+
+## WebSocket
+
+**Endpoint**: `ws://localhost:8000/ws/`
+
+### Usage Example
+
+```javascript
+// JavaScript client
+const ws = new WebSocket('ws://localhost:8000/ws/');
+
+ws.onopen = () => {
+  console.log('Connected');
+  ws.send(JSON.stringify({ type: 'text', payload: { content: 'Hello!' } }));
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  console.log('Received:', message);
+};
+
+ws.onclose = () => console.log('Disconnected');
+```
+
+### Message Structure
+
+```json
+{
+  "type": "text",
+  "payload": { "content": "message", "from": "user_id" },
+  "timestamp": 1704000000
+}
+```
+
+**Message Types**: `text`, `broadcast`, `ping`, `pong`, `close`, `error`
 
 ## Environment Variables
 

@@ -6,7 +6,7 @@ import "time"
 // SuccessResponse represents a successful API response
 // @Description Standard success response wrapper
 type SuccessResponse struct {
-	Success   bool        `json:"success" example:"true"`
+	Status    bool        `json:"status" example:"true"`
 	Code      int         `json:"code" example:"200"`
 	Message   string      `json:"message" example:"Operation successful"`
 	Data      interface{} `json:"data,omitempty"`
@@ -16,7 +16,7 @@ type SuccessResponse struct {
 // ErrorResponse represents an error API response
 // @Description Standard error response wrapper
 type ErrorResponse struct {
-	Success   bool      `json:"success" example:"false"`
+	Status    bool      `json:"status" example:"false"`
 	Code      int       `json:"code" example:"400"`
 	Message   string    `json:"message" example:"Error occurred"`
 	ErrorCode int       `json:"error_code,omitempty" example:"-1001"`

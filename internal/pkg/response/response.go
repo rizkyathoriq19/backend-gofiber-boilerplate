@@ -11,7 +11,7 @@ import (
 )
 
 type BaseResponse struct {
-	Success   bool        `json:"success"`
+	Status    bool        `json:"status"`
 	Code      int         `json:"code"`
 	Message   string      `json:"message"`
 	ErrorCode int         `json:"error_code,omitempty"`
@@ -68,7 +68,7 @@ func CreateErrorResponse(c *fiber.Ctx, err errors.AppError) BaseResponse {
 	lang := getLanguageFromHeader(c)
 
 	resp := BaseResponse{
-		Success:   false,
+		Status:    false,
 		Code:      err.StatusCode,
 		Message:   getMessageByLanguage(err.Code.MessageID(), err.Code.MessageEN(), lang),
 		ErrorCode: err.Code.Value(),
@@ -101,7 +101,7 @@ func CreateSuccessResponse(c *fiber.Ctx, messageID, messageEN string, data inter
 	}
 
 	return BaseResponse{
-		Success:   true,
+		Status:    true,
 		Code:      code,
 		Message:   getMessageByLanguage(messageID, messageEN, lang),
 		Data:      data,
@@ -117,7 +117,7 @@ func CreatePaginatedResponse(c *fiber.Ctx, messageID, messageEN string, data int
 	}
 
 	return BaseResponse{
-		Success:   true,
+		Status:    true,
 		Code:      code,
 		Message:   getMessageByLanguage(messageID, messageEN, lang),
 		Data:      data,

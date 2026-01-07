@@ -36,6 +36,7 @@ import (
 	"boilerplate-be/internal/pkg/response"
 	"boilerplate-be/internal/pkg/security"
 	"boilerplate-be/internal/pkg/utils"
+	"boilerplate-be/internal/websocket"
 	"boilerplate-be/web"
 
 	"github.com/goccy/go-json"
@@ -91,6 +92,10 @@ func main() {
 	authHandler := auth.NewAuthHandler(authUseCase)
 	rbacHandler := rbac.NewRBACHandler(rbacUseCase)
 
+	// ==================== Initialize WebSocket ====================
+	wsHub := websocket.NewHub()
+	go wsHub.Run()
+
 	// Initialize Fiber app with optimized config
 	app := fiber.New(fiber.Config{
 		AppName:      cfg.App.Name,
@@ -127,6 +132,9 @@ func main() {
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.SendString("pong")
 	})
+
+	// ==================== WebSocket Routes ====================
+	websocket.RegisterRoutes(app, wsHub)
 
 	// Routes
 	api := app.Group("/api/v1")
