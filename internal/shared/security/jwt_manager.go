@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"boilerplate-be/internal/database/redis"
-	"boilerplate-be/internal/pkg/enum"
+	"boilerplate-be/internal/database"
+	"boilerplate-be/internal/shared/enum"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -94,12 +94,12 @@ func (j *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-func (j *JWTManager) BlacklistToken(ctx context.Context, redisClient *redis.Client, tokenID string, expiry time.Duration) error {
+func (j *JWTManager) BlacklistToken(ctx context.Context, redisClient *database.RedisClient, tokenID string, expiry time.Duration) error {
 	key := fmt.Sprintf("blacklist:%s", tokenID)
 	return redisClient.SetWithTTL(ctx, key, "1", expiry)
 }
 
-func (j *JWTManager) IsTokenBlacklisted(ctx context.Context, redisClient *redis.Client, tokenID string) (bool, error) {
+func (j *JWTManager) IsTokenBlacklisted(ctx context.Context, redisClient *database.RedisClient, tokenID string) (bool, error) {
 	key := fmt.Sprintf("blacklist:%s", tokenID)
 	return redisClient.Exists(ctx, key)
 }

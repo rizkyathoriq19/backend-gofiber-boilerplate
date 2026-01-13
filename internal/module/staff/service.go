@@ -1,7 +1,7 @@
 package staff
 
 import (
-	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/shared/errors"
 )
 
 type staffUseCase struct {

@@ -19,12 +19,18 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 ├── internal/
 │   ├── config/              # App configuration
 │   ├── database/            # PostgreSQL & Redis
+│   ├── delivery/            # Delivery mechanisms
+│   │   └── websocket/       # WebSocket support
 │   ├── middleware/          # Auth, CORS, Logger, Rate Limit
-│   ├── module/
+│   ├── module/              # Feature modules
 │   │   ├── auth/            # Authentication
-│   │   └── rbac/            # Role-Based Access Control
-│   ├── websocket/           # WebSocket support
-│   └── pkg/                 # Shared utilities
+│   │   ├── rbac/            # Role-Based Access Control
+│   │   └── ...              # Other modules
+│   └── shared/              # Shared utilities
+│       ├── errors/          # Error handling
+│       ├── response/        # HTTP responses
+│       ├── security/        # JWT, hashing
+│       └── validator/       # Input validation
 ├── migrations/              # Database migrations
 └── docs/                    # Swagger docs
 ```

@@ -8,21 +8,21 @@ import (
 
 	gojson "github.com/goccy/go-json"
 
-	"boilerplate-be/internal/database/redis"
+	"boilerplate-be/internal/database"
 )
 
 type CacheHelper struct {
-	*redis.RedisHelper
+	*database.RedisHelper
 	defaultTTL time.Duration
 }
 
-func NewCacheHelper(client *redis.Client, defaultTTL time.Duration) *CacheHelper {
+func NewCacheHelper(client *database.RedisClient, defaultTTL time.Duration) *CacheHelper {
 	if defaultTTL == 0 {
 		defaultTTL = 1 * time.Hour // Default 1 hour
 	}
 
 	return &CacheHelper{
-		RedisHelper: redis.NewRedisHelper(client),
+		RedisHelper: database.NewRedisHelper(client),
 		defaultTTL:  defaultTTL,
 	}
 }

@@ -28,7 +28,7 @@ import (
 	_ "boilerplate-be/docs"
 	"boilerplate-be/internal/config"
 	"boilerplate-be/internal/database"
-	"boilerplate-be/internal/database/redis"
+	"boilerplate-be/internal/delivery/websocket"
 	"boilerplate-be/internal/middleware"
 	"boilerplate-be/internal/module/alert"
 	"boilerplate-be/internal/module/auth"
@@ -37,11 +37,10 @@ import (
 	"boilerplate-be/internal/module/rbac"
 	"boilerplate-be/internal/module/room"
 	"boilerplate-be/internal/module/staff"
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/response"
-	"boilerplate-be/internal/pkg/security"
-	"boilerplate-be/internal/pkg/utils"
-	"boilerplate-be/internal/websocket"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/response"
+	"boilerplate-be/internal/shared/security"
+	"boilerplate-be/internal/shared/utils"
 	"boilerplate-be/web"
 
 	"github.com/goccy/go-json"
@@ -70,7 +69,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize Redis
-	redisClient, err := redis.New(cfg.Redis)
+	redisClient, err := database.NewRedis(cfg.Redis)
 	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}

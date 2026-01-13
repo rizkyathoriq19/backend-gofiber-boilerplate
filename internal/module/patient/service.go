@@ -1,7 +1,7 @@
 package patient
 
 import (
-	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/shared/errors"
 )
 
 type patientUseCase struct {

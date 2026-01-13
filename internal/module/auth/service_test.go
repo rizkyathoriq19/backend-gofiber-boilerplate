@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	apperrors "boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/security"
+	apperrors "boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/security"
 )
 
 // MockAuthRepository implements AuthRepository interface for testing

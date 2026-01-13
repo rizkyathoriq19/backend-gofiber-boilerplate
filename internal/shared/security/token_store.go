@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"boilerplate-be/internal/database/redis"
+	"boilerplate-be/internal/database"
 )
 
 type TokenManager struct {
-	*redis.RedisHelper
+	*database.RedisHelper
 	keyPrefix string
 	ttl       time.Duration
 }
@@ -19,16 +19,16 @@ type TokenManagerConfig struct {
 	TTL       time.Duration
 }
 
-func NewTokenManager(client *redis.Client) *TokenManager {
+func NewTokenManager(client *database.RedisClient) *TokenManager {
 	return NewTokenManagerWithConfig(client, TokenManagerConfig{
 		KeyPrefix: "refresh_token",
 		TTL:       168 * time.Hour, // 7 days
 	})
 }
 
-func NewTokenManagerWithConfig(client *redis.Client, config TokenManagerConfig) *TokenManager {
+func NewTokenManagerWithConfig(client *database.RedisClient, config TokenManagerConfig) *TokenManager {
 	return &TokenManager{
-		RedisHelper: redis.NewRedisHelper(client),
+		RedisHelper: database.NewRedisHelper(client),
 		keyPrefix:   config.KeyPrefix,
 		ttl:         config.TTL,
 	}

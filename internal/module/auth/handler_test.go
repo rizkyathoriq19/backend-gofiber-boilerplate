@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"boilerplate-be/internal/middleware"
-	apperrors "boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/security"
+	apperrors "boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/security"
 
 	"github.com/gofiber/fiber/v2"
 )

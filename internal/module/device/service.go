@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/shared/errors"
 )
 
 type deviceUseCase struct {

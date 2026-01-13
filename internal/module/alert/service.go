@@ -4,7 +4,7 @@ import (
 	"boilerplate-be/internal/module/device"
 	"boilerplate-be/internal/module/patient"
 	"boilerplate-be/internal/module/staff"
-	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/shared/errors"
 )
 
 type alertUseCase struct {

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"boilerplate-be/internal/pkg/enum"
+	"boilerplate-be/internal/shared/enum"
 )
 
 func TestNew(t *testing.T) {

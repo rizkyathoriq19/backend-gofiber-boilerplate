@@ -1,7 +1,7 @@
 package room
 
 import (
-	"boilerplate-be/internal/pkg/errors"
+	"boilerplate-be/internal/shared/errors"
 )
 
 type roomUseCase struct {

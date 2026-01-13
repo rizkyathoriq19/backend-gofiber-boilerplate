@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/utils"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/utils"
 
 	"github.com/google/uuid"
 )

@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/security"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/security"
 )
 
 type authUseCase struct {

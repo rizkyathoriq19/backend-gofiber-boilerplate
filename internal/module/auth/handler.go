@@ -3,9 +3,9 @@ package auth
 import (
 	"time"
 
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/response"
-	"boilerplate-be/internal/pkg/validator"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/response"
+	"boilerplate-be/internal/shared/validator"
 
 	"github.com/gofiber/fiber/v2"
 )
