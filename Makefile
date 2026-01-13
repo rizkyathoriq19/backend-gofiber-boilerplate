@@ -37,8 +37,32 @@ migrate-reset:
 	migrate -path migrations -database "$(DB_URL)" drop -f
 	migrate -path migrations -database "$(DB_URL)" up
 
+migrate-force:
+	migrate -path migrations -database "$(DB_URL)" force $(version)
+
+migrate-status:
+	migrate -path migrations -database "$(DB_URL)" version
+
+db-fresh:
+	@echo "Dropping all database objects..."
+	go run scripts/db_reset.go
+	@echo "Running migrations..."
+	migrate -path migrations -database "$(DB_URL)" up
+	@echo "Database fresh complete!"
+
 seed:
 	@echo "Seeding is handled via migrations. Run 'make migrate-up'."
+
+tools:
+	go install github.com/swaggo/swag/cmd/swag@latest
+	go install github.com/air-verse/air@latest
+	go install -tags "postgres" github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+lint:
+	golangci-lint run ./...
+
+fmt:
+	go fmt ./...
 
 swagger:
 	swag init -g cmd/server/main.go -o docs --parseDependency --parseDepth 2

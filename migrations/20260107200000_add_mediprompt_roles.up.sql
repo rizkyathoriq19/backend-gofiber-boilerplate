@@ -17,6 +17,7 @@ ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'manager';
 
 INSERT INTO roles (name, description) VALUES
     ('nurse', 'Nursing staff - can respond to alerts and manage patients in assigned rooms'),
+    ('head_nurse', 'Head nurse - can view all rooms, manage nursing staff, and handle escalations'),
     ('doctor', 'Medical doctor - clinical access with patient management privileges'),
     ('patient', 'Patient user - limited self-service access'),
     ('manager', 'Hospital/ward manager - management access for staff and operations')
@@ -66,10 +67,10 @@ ON CONFLICT (name) DO NOTHING;
 -- ASSIGN PERMISSIONS TO ROLES
 -- =============================================
 
--- Admin gets all MEDIPROMPT permissions
+-- Head Nurse gets all MEDIPROMPT permissions (can view all rooms)
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p
-WHERE r.name = 'admin' AND p.resource IN ('rooms', 'devices', 'staff', 'patients', 'alerts', 'messages')
+WHERE r.name = 'head_nurse' AND p.resource IN ('rooms', 'devices', 'staff', 'patients', 'alerts', 'messages')
 ON CONFLICT DO NOTHING;
 
 -- Manager: staff management, room management, view alerts

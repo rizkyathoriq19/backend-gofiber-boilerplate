@@ -707,6 +707,42 @@ definitions:
     required:
     - status
     type: object
+  internal_module_message.MessageDirection:
+    enum:
+    - to_patient
+    - from_patient
+    - staff_to_staff
+    type: string
+    x-enum-varnames:
+    - DirectionToPatient
+    - DirectionFromPatient
+    - DirectionStaffToStaff
+  internal_module_message.SendMessageRequest:
+    properties:
+      content:
+        maxLength: 2000
+        minLength: 1
+        type: string
+      direction:
+        allOf:
+        - $ref: '#/definitions/internal_module_message.MessageDirection'
+        enum:
+        - to_patient
+        - from_patient
+        - staff_to_staff
+      is_urgent:
+        type: boolean
+      patient_id:
+        type: string
+      receiver_staff_id:
+        type: string
+      room_id:
+        type: string
+    required:
+    - content
+    - direction
+    - room_id
+    type: object
   internal_module_patient.AdmitPatientRequest:
     properties:
       condition_level:
@@ -1765,6 +1801,240 @@ paths:
       summary: Device heartbeat
       tags:
       - Devices
+  /messages:
+    get:
+      description: Gets messages for a room
+      parameters:
+      - description: Room ID
+        in: query
+        name: room_id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Message direction filter
+        in: query
+        name: direction
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get messages
+      tags:
+      - Messages
+    post:
+      consumes:
+      - application/json
+      description: Sends a new message to a room
+      parameters:
+      - description: Message request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_module_message.SendMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Send a message
+      tags:
+      - Messages
+  /messages/{id}:
+    delete:
+      description: Deletes a message by ID
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a message
+      tags:
+      - Messages
+    get:
+      description: Gets a message by ID
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a message
+      tags:
+      - Messages
+  /messages/{id}/read:
+    put:
+      description: Marks a message as read
+      parameters:
+      - description: Message ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Mark message as read
+      tags:
+      - Messages
+  /messages/my:
+    get:
+      description: Gets messages for the current user
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get my messages
+      tags:
+      - Messages
+  /messages/read-all:
+    put:
+      description: Marks all messages in a room as read for the current user
+      parameters:
+      - description: Room ID
+        in: query
+        name: room_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Mark all messages as read
+      tags:
+      - Messages
+  /messages/unread-count:
+    get:
+      description: Gets unread message count for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get unread count
+      tags:
+      - Messages
   /patients:
     get:
       consumes:

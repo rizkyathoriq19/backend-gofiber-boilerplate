@@ -7,7 +7,7 @@
 CREATE TYPE room_type AS ENUM ('patient_room', 'nurse_station', 'icu', 'emergency', 'operating_room');
 
 CREATE TABLE rooms (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL,
     type room_type NOT NULL DEFAULT 'patient_room',
     floor VARCHAR(20) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TYPE device_type AS ENUM ('microphone', 'teleprompter', 'button', 'sensor
 CREATE TYPE device_status AS ENUM ('online', 'offline', 'maintenance', 'error');
 
 CREATE TABLE devices (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
     type device_type NOT NULL,
     serial_number VARCHAR(100) UNIQUE NOT NULL,
@@ -64,7 +64,7 @@ CREATE TYPE staff_type AS ENUM ('nurse', 'doctor', 'manager', 'admin');
 CREATE TYPE shift_type AS ENUM ('morning', 'afternoon', 'night', 'on_call');
 
 CREATE TABLE staff (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     employee_id VARCHAR(50) UNIQUE NOT NULL,
     type staff_type NOT NULL,
@@ -91,7 +91,7 @@ CREATE TRIGGER update_staff_updated_at
 -- STAFF ROOM ASSIGNMENTS (for room-based permissions)
 -- =============================================
 CREATE TABLE staff_room_assignments (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
     room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     is_primary BOOLEAN DEFAULT false,

@@ -1,6 +1,6 @@
 -- Roles table
 CREATE TABLE IF NOT EXISTS roles (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- Permissions table  
 CREATE TABLE IF NOT EXISTS permissions (
-    id UUID PRIMARY KEY ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     resource VARCHAR(50) NOT NULL,
@@ -42,8 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions(resource);
 -- Seed default roles
 INSERT INTO roles (name, description) VALUES
     ('super_admin', 'Full system access with all permissions'),
-    ('admin', 'Administrative access for user management'),
-    ('user', 'Standard user access')
+    ('head_nurse', 'Head nurse - can view all rooms and manage nursing staff')
 ON CONFLICT (name) DO NOTHING;
 
 -- Seed default permissions
@@ -70,20 +69,8 @@ SELECT r.id, p.id FROM roles r, permissions p
 WHERE r.name = 'super_admin'
 ON CONFLICT DO NOTHING;
 
--- Assign user management permissions to admin
+-- Assign permissions to head_nurse
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM roles r, permissions p
-WHERE r.name = 'admin' AND p.name IN ('users:read', 'users:write', 'users:delete', 'roles:read', 'profile:read', 'profile:write')
-ON CONFLICT DO NOTHING;
-
--- Assign basic permissions to user
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p
-WHERE r.name = 'user' AND p.name IN ('profile:read', 'profile:write')
-ON CONFLICT DO NOTHING;
-
--- Assign default 'user' role to existing users without roles
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r
-WHERE r.name = 'user' AND u.id NOT IN (SELECT user_id FROM user_roles)
+WHERE r.name = 'head_nurse' AND p.name IN ('users:read', 'roles:read', 'profile:read', 'profile:write')
 ON CONFLICT DO NOTHING;

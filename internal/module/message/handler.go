@@ -22,15 +22,18 @@ func NewMessageHandler(messageUseCase MessageUseCase) *MessageHandler {
 	}
 }
 
-// SendMessage sends a new message
-// @Summary Send a message
-// @Tags Messages
-// @Accept json
-// @Produce json
-// @Param request body SendMessageRequest true "Message request"
-// @Success 201 {object} response.Response
-// @Security BearerAuth
-// @Router /messages [post]
+// SendMessage godoc
+// @Summary      Send a message
+// @Description  Sends a new message to a room
+// @Tags         Messages
+// @Accept       json
+// @Produce      json
+// @Param        body  body      SendMessageRequest  true  "Message request"
+// @Success      201   {object}  docs.SuccessResponse
+// @Failure      400   {object}  docs.ErrorResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages [post]
 func (h *MessageHandler) SendMessage(c *fiber.Ctx) error {
 	var req SendMessageRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -63,16 +66,20 @@ func (h *MessageHandler) SendMessage(c *fiber.Ctx) error {
 	))
 }
 
-// GetMessages gets messages for the current room
-// @Summary Get messages
-// @Tags Messages
-// @Produce json
-// @Param room_id query string true "Room ID"
-// @Param page query int false "Page number"
-// @Param limit query int false "Items per page"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages [get]
+// GetMessages godoc
+// @Summary      Get messages
+// @Description  Gets messages for a room
+// @Tags         Messages
+// @Produce      json
+// @Param        room_id    query     string  true   "Room ID"
+// @Param        page       query     int     false  "Page number"
+// @Param        limit      query     int     false  "Items per page"
+// @Param        direction  query     string  false  "Message direction filter"
+// @Success      200        {object}  docs.SuccessResponse
+// @Failure      400        {object}  docs.ErrorResponse
+// @Failure      401        {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages [get]
 func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	roomID := c.Query("room_id")
 	if roomID == "" {
@@ -121,14 +128,17 @@ func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 	))
 }
 
-// GetMessage gets a message by ID
-// @Summary Get a message
-// @Tags Messages
-// @Produce json
-// @Param id path string true "Message ID"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/{id} [get]
+// GetMessage godoc
+// @Summary      Get a message
+// @Description  Gets a message by ID
+// @Tags         Messages
+// @Produce      json
+// @Param        id   path      string  true  "Message ID"
+// @Success      200  {object}  docs.SuccessResponse
+// @Failure      404  {object}  docs.ErrorResponse
+// @Failure      401  {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/{id} [get]
 func (h *MessageHandler) GetMessage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -146,15 +156,17 @@ func (h *MessageHandler) GetMessage(c *fiber.Ctx) error {
 	))
 }
 
-// GetMyMessages gets messages for the current user
-// @Summary Get my messages
-// @Tags Messages
-// @Produce json
-// @Param page query int false "Page number"
-// @Param limit query int false "Items per page"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/my [get]
+// GetMyMessages godoc
+// @Summary      Get my messages
+// @Description  Gets messages for the current user
+// @Tags         Messages
+// @Produce      json
+// @Param        page   query     int  false  "Page number"
+// @Param        limit  query     int  false  "Items per page"
+// @Success      200    {object}  docs.SuccessResponse
+// @Failure      401    {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/my [get]
 func (h *MessageHandler) GetMyMessages(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 	userRole := c.Locals("user_role").(string)
@@ -209,13 +221,15 @@ func (h *MessageHandler) GetMyMessages(c *fiber.Ctx) error {
 	))
 }
 
-// GetUnreadCount gets unread message count
-// @Summary Get unread count
-// @Tags Messages
-// @Produce json
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/unread-count [get]
+// GetUnreadCount godoc
+// @Summary      Get unread count
+// @Description  Gets unread message count for the current user
+// @Tags         Messages
+// @Produce      json
+// @Success      200  {object}  docs.SuccessResponse
+// @Failure      401  {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/unread-count [get]
 func (h *MessageHandler) GetUnreadCount(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(string)
 	userRole := c.Locals("user_role").(string)
@@ -235,14 +249,17 @@ func (h *MessageHandler) GetUnreadCount(c *fiber.Ctx) error {
 	))
 }
 
-// MarkAsRead marks a message as read
-// @Summary Mark message as read
-// @Tags Messages
-// @Produce json
-// @Param id path string true "Message ID"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/{id}/read [put]
+// MarkAsRead godoc
+// @Summary      Mark message as read
+// @Description  Marks a message as read
+// @Tags         Messages
+// @Produce      json
+// @Param        id   path      string  true  "Message ID"
+// @Success      200  {object}  docs.SuccessResponse
+// @Failure      404  {object}  docs.ErrorResponse
+// @Failure      401  {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/{id}/read [put]
 func (h *MessageHandler) MarkAsRead(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -259,14 +276,17 @@ func (h *MessageHandler) MarkAsRead(c *fiber.Ctx) error {
 	))
 }
 
-// MarkAllAsRead marks all messages in a room as read
-// @Summary Mark all messages as read
-// @Tags Messages
-// @Produce json
-// @Param room_id query string true "Room ID"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/read-all [put]
+// MarkAllAsRead godoc
+// @Summary      Mark all messages as read
+// @Description  Marks all messages in a room as read for the current user
+// @Tags         Messages
+// @Produce      json
+// @Param        room_id  query     string  true  "Room ID"
+// @Success      200      {object}  docs.SuccessResponse
+// @Failure      400      {object}  docs.ErrorResponse
+// @Failure      401      {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/read-all [put]
 func (h *MessageHandler) MarkAllAsRead(c *fiber.Ctx) error {
 	roomID := c.Query("room_id")
 	if roomID == "" {
@@ -289,14 +309,17 @@ func (h *MessageHandler) MarkAllAsRead(c *fiber.Ctx) error {
 	))
 }
 
-// DeleteMessage deletes a message
-// @Summary Delete a message
-// @Tags Messages
-// @Produce json
-// @Param id path string true "Message ID"
-// @Success 200 {object} response.Response
-// @Security BearerAuth
-// @Router /messages/{id} [delete]
+// DeleteMessage godoc
+// @Summary      Delete a message
+// @Description  Deletes a message by ID
+// @Tags         Messages
+// @Produce      json
+// @Param        id   path      string  true  "Message ID"
+// @Success      200  {object}  docs.SuccessResponse
+// @Failure      404  {object}  docs.ErrorResponse
+// @Failure      401  {object}  docs.ErrorResponse
+// @Security     BearerAuth
+// @Router       /messages/{id} [delete]
 func (h *MessageHandler) DeleteMessage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
