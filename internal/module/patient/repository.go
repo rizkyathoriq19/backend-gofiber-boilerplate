@@ -298,3 +298,82 @@ func (r *patientRepository) Delete(id string) error {
 
 	return nil
 }
+
+// ==================== Vital Signs ====================
+
+// CreateVitalSign creates a new vital sign record
+func (r *patientRepository) CreateVitalSign(vs *VitalSign) error {
+	id, _ := uuid.NewV7()
+	vs.ID = id.String()
+	vs.RecordedAt = time.Now()
+	vs.CreatedAt = time.Now()
+
+	query := `
+		INSERT INTO vital_signs (id, patient_id, recorded_by_staff_id, heart_rate, blood_pressure_sys, blood_pressure_dia, temperature, oxygen_saturation, respiratory_rate, pain_level, notes, recorded_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	`
+
+	_, err := r.db.Exec(query, vs.ID, vs.PatientID, vs.RecordedByStaffID, vs.HeartRate, vs.BloodPressureSys, vs.BloodPressureDia, vs.Temperature, vs.OxygenSaturation, vs.RespiratoryRate, vs.PainLevel, vs.Notes, vs.RecordedAt, vs.CreatedAt)
+	if err != nil {
+		return errors.Wrap(err, errors.DatabaseInsertFailed)
+	}
+
+	return nil
+}
+
+// GetVitalSignsByPatientID gets vital signs history for a patient
+func (r *patientRepository) GetVitalSignsByPatientID(patientID string, limit int) ([]*VitalSign, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	query := `
+		SELECT id, patient_id, recorded_by_staff_id, heart_rate, blood_pressure_sys, blood_pressure_dia, temperature, oxygen_saturation, respiratory_rate, pain_level, notes, recorded_at, created_at
+		FROM vital_signs
+		WHERE patient_id = $1
+		ORDER BY recorded_at DESC
+		LIMIT $2
+	`
+
+	rows, err := r.db.Query(query, patientID, limit)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer rows.Close()
+
+	var vitals []*VitalSign
+	for rows.Next() {
+		vs := &VitalSign{}
+		err := rows.Scan(&vs.ID, &vs.PatientID, &vs.RecordedByStaffID, &vs.HeartRate, &vs.BloodPressureSys, &vs.BloodPressureDia, &vs.Temperature, &vs.OxygenSaturation, &vs.RespiratoryRate, &vs.PainLevel, &vs.Notes, &vs.RecordedAt, &vs.CreatedAt)
+		if err != nil {
+			return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+		}
+		vitals = append(vitals, vs)
+	}
+
+	return vitals, nil
+}
+
+// GetLatestVitalSign gets the most recent vital sign for a patient
+func (r *patientRepository) GetLatestVitalSign(patientID string) (*VitalSign, error) {
+	vs := &VitalSign{}
+
+	query := `
+		SELECT id, patient_id, recorded_by_staff_id, heart_rate, blood_pressure_sys, blood_pressure_dia, temperature, oxygen_saturation, respiratory_rate, pain_level, notes, recorded_at, created_at
+		FROM vital_signs
+		WHERE patient_id = $1
+		ORDER BY recorded_at DESC
+		LIMIT 1
+	`
+
+	err := r.db.QueryRow(query, patientID).Scan(&vs.ID, &vs.PatientID, &vs.RecordedByStaffID, &vs.HeartRate, &vs.BloodPressureSys, &vs.BloodPressureDia, &vs.Temperature, &vs.OxygenSaturation, &vs.RespiratoryRate, &vs.PainLevel, &vs.Notes, &vs.RecordedAt, &vs.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // No vital signs recorded yet
+		}
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+
+	return vs, nil
+}
+

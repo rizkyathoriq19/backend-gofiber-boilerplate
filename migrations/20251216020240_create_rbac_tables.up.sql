@@ -1,6 +1,6 @@
 -- Roles table
 CREATE TABLE IF NOT EXISTS roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY ,
     name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- Permissions table  
 CREATE TABLE IF NOT EXISTS permissions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY ,
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
     resource VARCHAR(50) NOT NULL,

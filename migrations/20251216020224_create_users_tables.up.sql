@@ -6,15 +6,15 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create user role enum
-CREATE TYPE user_role AS ENUM ('admin', 'user');
+CREATE TYPE user_role AS ENUM ('super_admin', 'manager', 'head_nurse', 'nurse', 'doctor', 'patient');
 
 -- Create users table
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role user_role NOT NULL DEFAULT 'user',
+    role user_role NOT NULL DEFAULT 'patient',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -40,7 +40,7 @@ CREATE TRIGGER update_users_updated_at
 
 -- Create user sessions table for Redis backup
 CREATE TABLE user_sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_id VARCHAR(255) NOT NULL,
     refresh_token_hash VARCHAR(255),

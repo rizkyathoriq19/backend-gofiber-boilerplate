@@ -33,6 +33,7 @@ import (
 	"boilerplate-be/internal/module/alert"
 	"boilerplate-be/internal/module/auth"
 	"boilerplate-be/internal/module/device"
+	"boilerplate-be/internal/module/message"
 	"boilerplate-be/internal/module/patient"
 	"boilerplate-be/internal/module/rbac"
 	"boilerplate-be/internal/module/room"
@@ -92,6 +93,7 @@ func main() {
 	staffRepo := staff.NewStaffRepository(db, cacheHelper)
 	patientRepo := patient.NewPatientRepository(db, cacheHelper)
 	alertRepo := alert.NewAlertRepository(db, cacheHelper)
+	messageRepo := message.NewMessageRepository(db, cacheHelper)
 
 	// ==================== Initialize Use Cases ====================
 	authUseCase := auth.NewAuthUseCase(authRepo, jwtManager, tokenManager)
@@ -101,6 +103,7 @@ func main() {
 	staffUseCase := staff.NewStaffUseCase(staffRepo)
 	patientUseCase := patient.NewPatientUseCase(patientRepo)
 	alertUseCase := alert.NewAlertUseCase(alertRepo, staffRepo, patientRepo, deviceRepo)
+	messageUseCase := message.NewMessageUseCase(messageRepo)
 
 	// ==================== Initialize Handlers ====================
 	authHandler := auth.NewAuthHandler(authUseCase)
@@ -110,6 +113,7 @@ func main() {
 	staffHandler := staff.NewStaffHandler(staffUseCase)
 	patientHandler := patient.NewPatientHandler(patientUseCase)
 	alertHandler := alert.NewAlertHandler(alertUseCase)
+	messageHandler := message.NewMessageHandler(messageUseCase)
 
 	// ==================== Initialize WebSocket ====================
 	wsHub := websocket.NewHub()
@@ -256,6 +260,17 @@ func main() {
 	alertsGroup.Post("/:id/acknowledge", alertHandler.AcknowledgeAlert)
 	alertsGroup.Post("/:id/resolve", alertHandler.ResolveAlert)
 	alertsGroup.Get("/:id/history", alertHandler.GetAlertHistory)
+
+	// Message routes
+	messagesGroup := protected.Group("/messages")
+	messagesGroup.Get("", messageHandler.GetMessages)
+	messagesGroup.Get("/my", messageHandler.GetMyMessages)
+	messagesGroup.Get("/unread-count", messageHandler.GetUnreadCount)
+	messagesGroup.Get("/:id", messageHandler.GetMessage)
+	messagesGroup.Post("", messageHandler.SendMessage)
+	messagesGroup.Put("/:id/read", messageHandler.MarkAsRead)
+	messagesGroup.Put("/read-all", messageHandler.MarkAllAsRead)
+	messagesGroup.Delete("/:id", messageHandler.DeleteMessage)
 
 
 	// Health check - HTML UI

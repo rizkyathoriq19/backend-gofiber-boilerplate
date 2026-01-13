@@ -7,7 +7,7 @@
 CREATE TYPE room_type AS ENUM ('patient_room', 'nurse_station', 'icu', 'emergency', 'operating_room');
 
 CREATE TABLE rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     name VARCHAR(100) NOT NULL,
     type room_type NOT NULL DEFAULT 'patient_room',
     floor VARCHAR(20) NOT NULL,
@@ -34,7 +34,7 @@ CREATE TYPE device_type AS ENUM ('microphone', 'teleprompter', 'button', 'sensor
 CREATE TYPE device_status AS ENUM ('online', 'offline', 'maintenance', 'error');
 
 CREATE TABLE devices (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
     type device_type NOT NULL,
     serial_number VARCHAR(100) UNIQUE NOT NULL,
@@ -64,7 +64,7 @@ CREATE TYPE staff_type AS ENUM ('nurse', 'doctor', 'manager', 'admin');
 CREATE TYPE shift_type AS ENUM ('morning', 'afternoon', 'night', 'on_call');
 
 CREATE TABLE staff (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     employee_id VARCHAR(50) UNIQUE NOT NULL,
     type staff_type NOT NULL,
@@ -91,7 +91,7 @@ CREATE TRIGGER update_staff_updated_at
 -- STAFF ROOM ASSIGNMENTS (for room-based permissions)
 -- =============================================
 CREATE TABLE staff_room_assignments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
     room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     is_primary BOOLEAN DEFAULT false,
@@ -108,7 +108,7 @@ CREATE INDEX idx_staff_room_assignments_room_id ON staff_room_assignments(room_i
 CREATE TYPE condition_level AS ENUM ('critical', 'serious', 'moderate', 'stable', 'good');
 
 CREATE TABLE patients (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
     medical_record_number VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -141,7 +141,7 @@ CREATE TYPE alert_priority AS ENUM ('critical', 'high', 'medium', 'low');
 CREATE TYPE alert_status AS ENUM ('pending', 'acknowledged', 'in_progress', 'resolved', 'escalated', 'cancelled');
 
 CREATE TABLE alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
     device_id UUID REFERENCES devices(id) ON DELETE SET NULL,
@@ -183,7 +183,7 @@ CREATE TRIGGER update_alerts_updated_at
 -- ALERT HISTORY TABLE (for audit trail)
 -- =============================================
 CREATE TABLE alert_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     alert_id UUID NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
     staff_id UUID REFERENCES staff(id) ON DELETE SET NULL,
     action VARCHAR(50) NOT NULL,
@@ -203,7 +203,7 @@ CREATE INDEX idx_alert_history_created_at ON alert_history(created_at);
 CREATE TYPE message_direction AS ENUM ('to_patient', 'from_patient', 'staff_to_staff');
 
 CREATE TABLE messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY ,
     room_id UUID NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
     sender_staff_id UUID REFERENCES staff(id) ON DELETE SET NULL,

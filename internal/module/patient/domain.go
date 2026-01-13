@@ -11,6 +11,11 @@ type PatientRepository interface {
 	UpdateConditionLevel(id string, level ConditionLevel) error
 	Discharge(id string) error
 	Delete(id string) error
+	
+	// Vital Signs
+	CreateVitalSign(vs *VitalSign) error
+	GetVitalSignsByPatientID(patientID string, limit int) ([]*VitalSign, error)
+	GetLatestVitalSign(patientID string) (*VitalSign, error)
 }
 
 // PatientUseCase defines the interface for patient business logic
@@ -23,4 +28,10 @@ type PatientUseCase interface {
 	UpdateConditionLevel(id string, level ConditionLevel) error
 	DischargePatient(id string) error
 	DeletePatient(id string) error
+	
+	// Vital Signs
+	RecordVitalSigns(patientID string, staffID string, req *CreateVitalSignRequest) (*VitalSign, error)
+	GetVitalSigns(patientID string, limit int) ([]*VitalSign, error)
+	GetLatestVitalSign(patientID string) (*VitalSign, error)
 }
+

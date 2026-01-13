@@ -119,3 +119,44 @@ func (u *patientUseCase) DeletePatient(id string) error {
 
 	return u.patientRepo.Delete(id)
 }
+
+// ==================== Vital Signs ====================
+
+// RecordVitalSigns records new vital signs for a patient
+func (u *patientUseCase) RecordVitalSigns(patientID string, staffID string, req *CreateVitalSignRequest) (*VitalSign, error) {
+	// Verify patient exists
+	_, err := u.patientRepo.GetByID(patientID)
+	if err != nil {
+		return nil, err
+	}
+
+	vs := &VitalSign{
+		PatientID:         patientID,
+		RecordedByStaffID: &staffID,
+		HeartRate:         req.HeartRate,
+		BloodPressureSys:  req.BloodPressureSys,
+		BloodPressureDia:  req.BloodPressureDia,
+		Temperature:       req.Temperature,
+		OxygenSaturation:  req.OxygenSaturation,
+		RespiratoryRate:   req.RespiratoryRate,
+		PainLevel:         req.PainLevel,
+		Notes:             req.Notes,
+	}
+
+	if err := u.patientRepo.CreateVitalSign(vs); err != nil {
+		return nil, err
+	}
+
+	return vs, nil
+}
+
+// GetVitalSigns gets vital signs history for a patient
+func (u *patientUseCase) GetVitalSigns(patientID string, limit int) ([]*VitalSign, error) {
+	return u.patientRepo.GetVitalSignsByPatientID(patientID, limit)
+}
+
+// GetLatestVitalSign gets the most recent vital sign for a patient
+func (u *patientUseCase) GetLatestVitalSign(patientID string) (*VitalSign, error) {
+	return u.patientRepo.GetLatestVitalSign(patientID)
+}
+

@@ -21,21 +21,21 @@ func TestJWTManager_GenerateToken(t *testing.T) {
 			name:    "Generate valid token",
 			userID:  "user-123",
 			email:   "test@example.com",
-			role:    enum.UserRoleUser,
+			role:    enum.UserRoleNurse,
 			wantErr: false,
 		},
 		{
 			name:    "Generate token with admin role",
 			userID:  "admin-123",
 			email:   "admin@example.com",
-			role:    enum.UserRoleAdmin,
+			role:    enum.UserRoleSuperAdmin,
 			wantErr: false,
 		},
 		{
 			name:    "Empty user ID",
 			userID:  "",
 			email:   "test@example.com",
-			role:    enum.UserRoleUser,
+			role:    enum.UserRoleNurse,
 			wantErr: false, // JWT allows empty claims
 		},
 	}
@@ -59,7 +59,7 @@ func TestJWTManager_GenerateToken(t *testing.T) {
 func TestJWTManager_GenerateTokenPair(t *testing.T) {
 	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour)
 
-	accessToken, refreshToken, err := jwtManager.GenerateTokenPair("user-123", "test@example.com", enum.UserRoleUser)
+	accessToken, refreshToken, err := jwtManager.GenerateTokenPair("user-123", "test@example.com", enum.UserRoleNurse)
 
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error = %v", err)
@@ -82,7 +82,7 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour)
 
 	// Generate a valid token first
-	validToken, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleUser)
+	validToken, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleNurse)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestJWTManager_TokenExpiry(t *testing.T) {
 	// Create JWT manager with very short expiry
 	jwtManager := NewJWTManager("test-secret", 1*time.Millisecond)
 
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleUser)
+	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleNurse)
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
