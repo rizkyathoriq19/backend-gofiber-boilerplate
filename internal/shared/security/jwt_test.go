@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"boilerplate-be/internal/pkg/enum"
+	"boilerplate-be/internal/shared/enum"
 )
 
 func TestJWTManager_GenerateToken(t *testing.T) {

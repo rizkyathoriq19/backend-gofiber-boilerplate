@@ -3,7 +3,7 @@ package auth
 import (
 	"time"
 
-	"boilerplate-be/internal/pkg/enum"
+	"boilerplate-be/internal/shared/enum"
 )
 
 type User struct {

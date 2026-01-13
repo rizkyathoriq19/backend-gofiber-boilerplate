@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"boilerplate-be/internal/database/redis"
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/response"
-	"boilerplate-be/internal/pkg/security"
+	"boilerplate-be/internal/database"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/response"
+	"boilerplate-be/internal/shared/security"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func AuthMiddleware(jwtManager *security.JWTManager, redisClient *redis.Client) fiber.Handler {
+func AuthMiddleware(jwtManager *security.JWTManager, redisClient *database.RedisClient) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Get authorization header
 		authHeader := c.Get("Authorization")

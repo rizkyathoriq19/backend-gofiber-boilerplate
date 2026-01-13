@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"boilerplate-be/internal/pkg/enum"
+	"boilerplate-be/internal/shared/enum"
 	"errors"
 	"fmt"
 )

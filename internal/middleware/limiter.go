@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"boilerplate-be/internal/config"
-	"boilerplate-be/internal/pkg/errors"
-	"boilerplate-be/internal/pkg/response"
+	"boilerplate-be/internal/shared/errors"
+	"boilerplate-be/internal/shared/response"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
