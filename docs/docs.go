@@ -4296,7 +4296,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "user@example.com"
+                    "example": "patient@example.com"
                 },
                 "password": {
                     "type": "string",
@@ -4438,7 +4438,7 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "user@example.com"
+                    "example": "patient@example.com"
                 },
                 "name": {
                     "type": "string",
@@ -4461,7 +4461,7 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string",
-                    "example": "Administrator role"
+                    "example": "Full system access"
                 },
                 "id": {
                     "type": "string",
@@ -4469,7 +4469,7 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "admin"
+                    "example": "superadmin"
                 }
             }
         },
@@ -4706,7 +4706,7 @@ const docTemplate = `{
                 },
                 "email": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "patient@example.com"
                 },
                 "id": {
                     "type": "string",
@@ -4718,7 +4718,7 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string",
-                    "example": "user"
+                    "example": "patient"
                 },
                 "updated_at": {
                     "type": "string"

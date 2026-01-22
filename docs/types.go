@@ -28,8 +28,8 @@ type ErrorResponse struct {
 type UserResponse struct {
 	ID        string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name      string    `json:"name" example:"John Doe"`
-	Email     string    `json:"email" example:"john@example.com"`
-	Role      string    `json:"role" example:"user"`
+	Email     string    `json:"email" example:"patient@example.com"`
+	Role      string    `json:"role" example:"patient"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -57,8 +57,8 @@ type TokenResponse struct {
 // @Description Role information
 type RoleResponse struct {
 	ID          string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Name        string    `json:"name" example:"admin"`
-	Description string    `json:"description,omitempty" example:"Administrator role"`
+	Name        string    `json:"name" example:"superadmin"`
+	Description string    `json:"description,omitempty" example:"Full system access"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -83,7 +83,7 @@ type UserRolesResponse struct {
 // RegisterRequest represents registration payload
 // @Description User registration request
 type RegisterRequest struct {
-	Email    string `json:"email" example:"user@example.com" validate:"required,email"`
+	Email    string `json:"email" example:"patient@example.com" validate:"required,email"`
 	Password string `json:"password" example:"password123" validate:"required,min=6"`
 	Name     string `json:"name" example:"John Doe" validate:"required,min=2"`
 }
@@ -91,7 +91,7 @@ type RegisterRequest struct {
 // LoginRequest represents login payload
 // @Description User login request
 type LoginRequest struct {
-	Email    string `json:"email" example:"user@example.com" validate:"required,email"`
+	Email    string `json:"email" example:"patient@example.com" validate:"required,email"`
 	Password string `json:"password" example:"password123" validate:"required"`
 }
 

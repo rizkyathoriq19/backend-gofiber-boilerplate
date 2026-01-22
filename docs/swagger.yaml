@@ -249,7 +249,7 @@ definitions:
     description: User login request
     properties:
       email:
-        example: user@example.com
+        example: patient@example.com
         type: string
       password:
         example: password123
@@ -350,7 +350,7 @@ definitions:
     description: User registration request
     properties:
       email:
-        example: user@example.com
+        example: patient@example.com
         type: string
       name:
         example: John Doe
@@ -371,13 +371,13 @@ definitions:
       created_at:
         type: string
       description:
-        example: Administrator role
+        example: Full system access
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       name:
-        example: admin
+        example: superadmin
         type: string
     type: object
   docs.RoomAssignmentDocResponse:
@@ -548,7 +548,7 @@ definitions:
       created_at:
         type: string
       email:
-        example: john@example.com
+        example: patient@example.com
         type: string
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
@@ -557,7 +557,7 @@ definitions:
         example: John Doe
         type: string
       role:
-        example: user
+        example: patient
         type: string
       updated_at:
         type: string
