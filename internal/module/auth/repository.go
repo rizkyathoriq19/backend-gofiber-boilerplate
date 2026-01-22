@@ -30,7 +30,7 @@ func (r *authRepository) CreateUser(user *User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 	if user.Role == "" {
-		user.Role = "user"
+		user.Role = "patient"
 	}
 
 	query := `
