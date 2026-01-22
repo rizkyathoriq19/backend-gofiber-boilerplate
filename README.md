@@ -162,7 +162,12 @@ RATE_LIMIT_WINDOW=1m
 | Email | Password | Role |
 |-------|----------|------|
 | superadmin@example.com | password123 | super_admin |
-| user@example.com | password123 | user |
+| headnurse@example.com | password123 | head_nurse |
+| manager@hospital.com | password123 | manager |
+| doctor@hospital.com | password123 | doctor |
+| nurser1@hospital.com | password123 | nurse |
+| nurse2@hospital.com | password123 | nurse |
+| patient@example.com | password123 | patient |
 
 ## Testing
 
