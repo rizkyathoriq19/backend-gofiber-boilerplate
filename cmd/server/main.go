@@ -20,12 +20,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	_ "boilerplate-be/docs"
+	"boilerplate-be/docs"
 	"boilerplate-be/internal/config"
 	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/delivery/websocket"
@@ -131,6 +132,10 @@ func main() {
 		DisableStartupMessage: cfg.App.Env == "production",
 		ReadBufferSize:        4096,
 		WriteBufferSize:       4096,
+		// Trust proxy headers (for devtunnel, ngrok, cloudflare, etc.)
+		EnableTrustedProxyCheck: true,
+		TrustedProxies:          []string{"127.0.0.1", "::1"},
+		ProxyHeader:             fiber.HeaderXForwardedFor,
 	})
 
 	// Add middleware (order matters!)
@@ -143,10 +148,63 @@ func main() {
 	app.Use(middleware.HelmetMiddleware())
 	app.Use(middleware.RateLimitMiddleware(cfg))
 
-	// Swagger UI
-	app.Get("/swagger/*", swagger.New(swagger.Config{
-		DeepLinking: true,
-	}))
+	// Configure Swagger docs with dynamic host
+	hosts := cfg.Swagger.Hosts
+	schemes := cfg.Swagger.Schemes
+	basePath := cfg.Swagger.BasePath
+
+	// Set default host
+	if len(hosts) > 0 {
+		docs.SwaggerInfo.Host = hosts[0]
+	}
+	docs.SwaggerInfo.BasePath = basePath
+	docs.SwaggerInfo.Schemes = schemes
+
+	// Build URLs config for swagger (multiple servers dropdown)
+	var urlsConfig string
+	for i, host := range hosts {
+		name := host
+		if i == 0 {
+			name = "Local - " + host
+		} else {
+			name = "Remote - " + host
+		}
+		if i > 0 {
+			urlsConfig += ","
+		}
+		urlsConfig += fmt.Sprintf(`{url: "/swagger/doc.json?host=%d", name: "%s"}`, i, name)
+	}
+
+	// Serve dynamic swagger doc.json based on host parameter
+	app.Get("/swagger/doc.json", func(c *fiber.Ctx) error {
+		hostIdx := c.QueryInt("host", 0)
+		if hostIdx >= 0 && hostIdx < len(hosts) {
+			docs.SwaggerInfo.Host = hosts[hostIdx]
+		}
+		c.Set("Content-Type", "application/json")
+		return c.SendString(docs.SwaggerInfo.ReadDoc())
+	})
+
+	// Custom Swagger UI with server selector dropdown
+	app.Get("/swagger", func(c *fiber.Ctx) error {
+		return c.Redirect("/swagger/index.html", fiber.StatusMovedPermanently)
+	})
+
+	app.Get("/swagger/*", func(c *fiber.Ctx) error {
+		path := c.Params("*")
+		if path == "" || path == "index.html" {
+			c.Set("Content-Type", "text/html")
+			html, err := web.RenderSwagger(cfg.App.Name, urlsConfig, "Local - "+hosts[0])
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).SendString("Error rendering swagger page")
+			}
+			return c.SendString(html)
+		}
+		// For other swagger assets, use default handler
+		return swagger.New(swagger.Config{
+			DeepLinking: true,
+		})(c)
+	})
 
 	// Serve static docs files (architecture diagrams, etc)
 	app.Static("/docs", "./docs")
@@ -274,7 +332,7 @@ func main() {
 
 
 	// Health check - HTML UI
-	api.Get("/health", func(c *fiber.Ctx) error {
+	app.Get("/health", func(c *fiber.Ctx) error {
 		html, err := web.RenderHealth(cfg.App.Name)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Error rendering page")

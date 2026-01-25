@@ -15,6 +15,7 @@ type Config struct {
 	Security  SecurityConfig
 	CORS      CORSConfig
 	RateLimit RateLimitConfig
+	Swagger   SwaggerConfig
 }
 
 type AppConfig struct {
@@ -67,6 +68,12 @@ type RateLimitConfig struct {
 	Window time.Duration
 }
 
+type SwaggerConfig struct {
+	Hosts    []string
+	BasePath string
+	Schemes  []string
+}
+
 func New() *Config {
 	return &Config{
 		App: AppConfig{
@@ -111,6 +118,11 @@ func New() *Config {
 		RateLimit: RateLimitConfig{
 			Max:    parseInt(getEnv("RATE_LIMIT_MAX", "100"), 100),
 			Window: parseDuration(getEnv("RATE_LIMIT_WINDOW", "1m"), time.Minute),
+		},
+		Swagger: SwaggerConfig{
+			Hosts:    splitAndTrim(getEnv("SWAGGER_HOSTS", "localhost:3002")),
+			BasePath: getEnv("SWAGGER_BASE_PATH", "/api/v1"),
+			Schemes:  splitAndTrim(getEnv("SWAGGER_SCHEMES", "http,https")),
 		},
 	}
 }
