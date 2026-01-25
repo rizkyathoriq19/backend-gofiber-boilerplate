@@ -1,5 +1,5 @@
 # ==================== Build Stage ====================
-FROM golang:1.24-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # Install git and ca-certificates (needed for fetching dependencies)
 RUN apk add --no-cache git ca-certificates tzdata
@@ -50,11 +50,11 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8050
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8000/ping || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8050/ping || exit 1
 
 # Run the application
 CMD ["./server"]

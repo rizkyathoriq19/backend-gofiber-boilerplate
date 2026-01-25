@@ -1,42 +1,46 @@
+# ==================== Production/Staging Docker Compose ====================
+# Uses existing external services (MySQL, PostgreSQL, Redis) on the host
+# Run with: docker-compose up -d
+
 services:
   # ==================== API Service ====================
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: gofiber-api
+    container_name: nurseprompt-api
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8000}:8000"
+      - "${APP_PORT:-8050}:8050"
     environment:
-      - APP_NAME=${APP_NAME:-Go Fiber API}
+      - APP_NAME=${APP_NAME:-NursePrompt API}
       - APP_ENV=${APP_ENV:-production}
       - APP_HOST=0.0.0.0
-      - APP_PORT=8000
+      - APP_PORT=8050
       - APP_PREFORK=false
-      - DB_HOST=postgres
-      - DB_PORT=5432
+      # Database - connects to existing PostgreSQL container (secure_postgres)
+      - DB_HOST=${DB_HOST:-secure_postgres}
+      - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-postgres}
       - DB_NAME=${DB_NAME:-boilerplate}
-      - DB_SSL_MODE=disable
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - DB_SSL_MODE=${DB_SSL_MODE:-disable}
+      # Redis - connects to existing Redis container (redis-auth)
+      - REDIS_HOST=${REDIS_HOST:-redis-auth}
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - REDIS_DB=0
+      - REDIS_DB=${REDIS_DB:-0}
+      # JWT Configuration
       - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
       - JWT_EXPIRY=${JWT_EXPIRY:-24h}
       - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY:-168h}
+      # Rate Limiting
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-1m}
+      # Security
       - BCRYPT_COST=${BCRYPT_COST:-12}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     networks:
-      - app-network
+      - staging-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/ping"]
       interval: 30s
@@ -44,55 +48,8 @@ services:
       retries: 3
       start_period: 10s
 
-  # ==================== PostgreSQL ====================
-  postgres:
-    image: postgres:17-alpine
-    container_name: gofiber-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-boilerplate}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${DB_PORT:-5432}:5432"
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-boilerplate}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
-  # ==================== Redis ====================
-  redis:
-    image: redis:7-alpine
-    container_name: gofiber-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes ${REDIS_PASSWORD:+--requirepass $REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
-
-# ==================== Volumes ====================
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-
 # ==================== Networks ====================
 networks:
-  app-network:
-    driver: bridge
+  staging-network:
+    external: true
+    name: ${DOCKER_NETWORK:-bridge}
