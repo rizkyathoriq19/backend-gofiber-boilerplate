@@ -130,15 +130,15 @@ func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 
 // GetMessage godoc
 // @Summary      Get a message
-// @Description  Gets a message by ID
+// @Description  Gets a message by UUID
 // @Tags         Messages
 // @Produce      json
-// @Param        id   path      string  true  "Message ID"
+// @Param        uuid   path      string  true  "Message UUID"
 // @Success      200  {object}  docs.SuccessResponse
 // @Failure      404  {object}  docs.ErrorResponse
 // @Failure      401  {object}  docs.ErrorResponse
 // @Security     BearerAuth
-// @Router       /messages/{id} [get]
+// @Router       /messages/{uuid} [get]
 func (h *MessageHandler) GetMessage(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -254,12 +254,12 @@ func (h *MessageHandler) GetUnreadCount(c *fiber.Ctx) error {
 // @Description  Marks a message as read
 // @Tags         Messages
 // @Produce      json
-// @Param        id   path      string  true  "Message ID"
+// @Param        uuid   path      string  true  "Message UUID"
 // @Success      200  {object}  docs.SuccessResponse
 // @Failure      404  {object}  docs.ErrorResponse
 // @Failure      401  {object}  docs.ErrorResponse
 // @Security     BearerAuth
-// @Router       /messages/{id}/read [put]
+// @Router       /messages/{uuid}/read [put]
 func (h *MessageHandler) MarkAsRead(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -311,15 +311,15 @@ func (h *MessageHandler) MarkAllAsRead(c *fiber.Ctx) error {
 
 // DeleteMessage godoc
 // @Summary      Delete a message
-// @Description  Deletes a message by ID
+// @Description  Deletes a message by UUID
 // @Tags         Messages
 // @Produce      json
-// @Param        id   path      string  true  "Message ID"
+// @Param        uuid   path      string  true  "Message UUID"
 // @Success      200  {object}  docs.SuccessResponse
 // @Failure      404  {object}  docs.ErrorResponse
 // @Failure      401  {object}  docs.ErrorResponse
 // @Security     BearerAuth
-// @Router       /messages/{id} [delete]
+// @Router       /messages/{uuid} [delete]
 func (h *MessageHandler) DeleteMessage(c *fiber.Ctx) error {
 	id := c.Params("id")
 

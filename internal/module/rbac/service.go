@@ -132,6 +132,42 @@ func (u *rbacUseCase) RemovePermissionFromRole(roleID, permissionID string) erro
 	return u.rbacRepo.RemovePermissionFromRole(roleID, permissionID)
 }
 
+func (u *rbacUseCase) BatchAssignPermissionsToRole(roleID string, permissionIDs []string) error {
+	// Verify role exists
+	if _, err := u.rbacRepo.GetRoleByID(roleID); err != nil {
+		return err
+	}
+
+	// Verify all permissions exist
+	for _, permissionID := range permissionIDs {
+		if _, err := u.rbacRepo.GetPermissionByID(permissionID); err != nil {
+			return err
+		}
+	}
+
+	return u.rbacRepo.BatchAssignPermissionsToRole(roleID, permissionIDs)
+}
+
+func (u *rbacUseCase) BatchRemovePermissionsFromRole(roleID string, permissionIDs []string) error {
+	// Verify role exists
+	if _, err := u.rbacRepo.GetRoleByID(roleID); err != nil {
+		return err
+	}
+
+	return u.rbacRepo.BatchRemovePermissionsFromRole(roleID, permissionIDs)
+}
+
+func (u *rbacUseCase) BatchGetRolePermissions(roleIDs []string) (map[string][]Permission, error) {
+	// Verify all roles exist
+	for _, roleID := range roleIDs {
+		if _, err := u.rbacRepo.GetRoleByID(roleID); err != nil {
+			return nil, err
+		}
+	}
+
+	return u.rbacRepo.BatchGetRolePermissions(roleIDs)
+}
+
 // ==================== Permission Checking ====================
 
 func (u *rbacUseCase) CheckUserRole(userID string, roles ...string) (bool, error) {

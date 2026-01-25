@@ -22,7 +22,7 @@ type RefreshTokenResponse struct {
 }
 
 type UserResponse struct {
-	ID        string        `json:"id"`
+	ID        string        `json:"uuid"`
 	Name      string        `json:"name"`
 	Email     string        `json:"email"`
 	Role      enum.UserRole `json:"role"`

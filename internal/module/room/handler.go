@@ -65,11 +65,11 @@ func (h *RoomHandler) CreateRoom(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Room ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.RoomDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /rooms/{id} [get]
+// @Param        uuid  path      string  true  "Room UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.RoomDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /rooms/{uuid} [get]
 func (h *RoomHandler) GetRoom(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -100,7 +100,7 @@ func (h *RoomHandler) GetRoom(c *fiber.Ctx) error {
 // @Param        is_active query     bool    false  "Active status filter"
 // @Param        page      query     int     false  "Page number" default(1)
 // @Param        limit     query     int     false  "Items per page" default(10)
-// @Success      200       {object}  docs.SuccessResponse{data=docs.RoomListDocResponse}
+// @Success      200       {object}  docs.SuccessResponse{data=[]docs.RoomDocResponse,meta=docs.MetaResponse}
 // @Failure      401       {object}  docs.ErrorResponse
 // @Router       /rooms [get]
 func (h *RoomHandler) GetRooms(c *fiber.Ctx) error {
@@ -131,21 +131,22 @@ func (h *RoomHandler) GetRooms(c *fiber.Ctx) error {
 		roomResponses = append(roomResponses, room.ToResponse())
 	}
 
-	totalPages := total / filter.Limit
+	totalPages := int64(total / filter.Limit)
 	if total%filter.Limit > 0 {
 		totalPages++
 	}
 
-	listResponse := RoomListResponse{
-		Rooms:      roomResponses,
-		Total:      total,
-		Page:       filter.Page,
-		Limit:      filter.Limit,
-		TotalPages: totalPages,
+	meta := &response.MetaResponse{
+		Page:      int64(filter.Page),
+		PageSize:  int64(filter.Limit),
+		Total:     int64(total),
+		TotalPage: totalPages,
+		IsNext:    int64(filter.Page) < totalPages,
+		IsBack:    filter.Page > 1,
 	}
 
-	return c.JSON(response.CreateSuccessResponse(
-		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, listResponse,
+	return c.JSON(response.CreatePaginatedResponse(
+		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, roomResponses, meta,
 	))
 }
 
@@ -156,14 +157,14 @@ func (h *RoomHandler) GetRooms(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string             true  "Room ID"
+// @Param        uuid  path      string             true  "Room UUID"
 // @Param        body  body      UpdateRoomRequest  true  "Room update data"
 // @Success      200   {object}  docs.SuccessResponse{data=docs.RoomDocResponse}
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      403   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /rooms/{id} [put]
+// @Router       /rooms/{uuid} [put]
 func (h *RoomHandler) UpdateRoom(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -200,12 +201,12 @@ func (h *RoomHandler) UpdateRoom(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Room ID"
-// @Success      200  {object}  docs.SuccessResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /rooms/{id} [delete]
+// @Param        uuid  path      string  true  "Room UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /rooms/{uuid} [delete]
 func (h *RoomHandler) DeleteRoom(c *fiber.Ctx) error {
 	id := c.Params("id")
 

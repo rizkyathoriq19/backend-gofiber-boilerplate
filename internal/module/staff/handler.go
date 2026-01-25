@@ -65,11 +65,11 @@ func (h *StaffHandler) CreateStaff(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Staff ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.StaffDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /staff/{id} [get]
+// @Param        uuid  path      string  true  "Staff UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.StaffDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /staff/{uuid} [get]
 func (h *StaffHandler) GetStaff(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -100,7 +100,7 @@ func (h *StaffHandler) GetStaff(c *fiber.Ctx) error {
 // @Param        on_duty    query     bool    false  "On duty filter"
 // @Param        page       query     int     false  "Page number" default(1)
 // @Param        limit      query     int     false  "Items per page" default(10)
-// @Success      200        {object}  docs.SuccessResponse{data=docs.StaffListDocResponse}
+// @Success      200        {object}  docs.SuccessResponse{data=[]docs.StaffDocResponse,meta=docs.MetaResponse}
 // @Failure      401        {object}  docs.ErrorResponse
 // @Router       /staff [get]
 func (h *StaffHandler) GetAllStaff(c *fiber.Ctx) error {
@@ -131,21 +131,22 @@ func (h *StaffHandler) GetAllStaff(c *fiber.Ctx) error {
 		staffResponses = append(staffResponses, staff.ToResponse())
 	}
 
-	totalPages := total / filter.Limit
+	totalPages := int64(total / filter.Limit)
 	if total%filter.Limit > 0 {
 		totalPages++
 	}
 
-	listResponse := StaffListResponse{
-		Staff:      staffResponses,
-		Total:      total,
-		Page:       filter.Page,
-		Limit:      filter.Limit,
-		TotalPages: totalPages,
+	meta := &response.MetaResponse{
+		Page:      int64(filter.Page),
+		PageSize:  int64(filter.Limit),
+		Total:     int64(total),
+		TotalPage: totalPages,
+		IsNext:    int64(filter.Page) < totalPages,
+		IsBack:    filter.Page > 1,
 	}
 
-	return c.JSON(response.CreateSuccessResponse(
-		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, listResponse,
+	return c.JSON(response.CreatePaginatedResponse(
+		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, staffResponses, meta,
 	))
 }
 
@@ -202,13 +203,13 @@ func (h *StaffHandler) GetOnDutyStaff(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string             true  "Staff ID"
+// @Param        uuid  path      string             true  "Staff UUID"
 // @Param        body  body      UpdateStaffRequest true  "Staff update data"
 // @Success      200   {object}  docs.SuccessResponse{data=docs.StaffDocResponse}
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /staff/{id} [put]
+// @Router       /staff/{uuid} [put]
 func (h *StaffHandler) UpdateStaff(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -245,13 +246,13 @@ func (h *StaffHandler) UpdateStaff(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string             true  "Staff ID"
+// @Param        uuid  path      string             true  "Staff UUID"
 // @Param        body  body      UpdateShiftRequest true  "Shift update data"
-// @Success      200   {object}  docs.ErrorResponse
+// @Success      200   {object}  docs.SuccessResponse
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /staff/{id}/shift [put]
+// @Router       /staff/{uuid}/shift [put]
 func (h *StaffHandler) UpdateShift(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -287,11 +288,11 @@ func (h *StaffHandler) UpdateShift(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Staff ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /staff/{id}/toggle-duty [post]
+// @Param        uuid  path      string  true  "Staff UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /staff/{uuid}/toggle-duty [post]
 func (h *StaffHandler) ToggleOnDuty(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -315,13 +316,13 @@ func (h *StaffHandler) ToggleOnDuty(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string            true  "Staff ID"
+// @Param        uuid  path      string            true  "Staff UUID"
 // @Param        body  body      AssignRoomRequest true  "Room assignment data"
-// @Success      200   {object}  docs.ErrorResponse
+// @Success      200   {object}  docs.SuccessResponse
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /staff/{id}/rooms [post]
+// @Router       /staff/{uuid}/rooms [post]
 func (h *StaffHandler) AssignToRoom(c *fiber.Ctx) error {
 	staffID := c.Params("id")
 
@@ -357,12 +358,12 @@ func (h *StaffHandler) AssignToRoom(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id      path      string  true  "Staff ID"
-// @Param        roomId  path      string  true  "Room ID"
-// @Success      200     {object}  docs.ErrorResponse
+// @Param        uuid    path      string  true  "Staff UUID"
+// @Param        roomId  path      string  true  "Room UUID"
+// @Success      200     {object}  docs.SuccessResponse
 // @Failure      401     {object}  docs.ErrorResponse
 // @Failure      404     {object}  docs.ErrorResponse
-// @Router       /staff/{id}/rooms/{roomId} [delete]
+// @Router       /staff/{uuid}/rooms/{roomId} [delete]
 func (h *StaffHandler) RemoveFromRoom(c *fiber.Ctx) error {
 	staffID := c.Params("id")
 	roomID := c.Params("roomId")
@@ -387,11 +388,11 @@ func (h *StaffHandler) RemoveFromRoom(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Staff ID"
-// @Success      200  {object}  docs.SuccessResponse{data=[]docs.RoomAssignmentDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /staff/{id}/rooms [get]
+// @Param        uuid  path      string  true  "Staff UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=[]docs.RoomAssignmentDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /staff/{uuid}/rooms [get]
 func (h *StaffHandler) GetRoomAssignments(c *fiber.Ctx) error {
 	staffID := c.Params("id")
 
@@ -426,12 +427,12 @@ func (h *StaffHandler) GetRoomAssignments(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Staff ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /staff/{id} [delete]
+// @Param        uuid  path      string  true  "Staff UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /staff/{uuid} [delete]
 func (h *StaffHandler) DeleteStaff(c *fiber.Ctx) error {
 	id := c.Params("id")
 

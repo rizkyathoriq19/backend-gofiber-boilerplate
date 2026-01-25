@@ -6,7 +6,7 @@ import (
 
 // RoomResponse represents the room response
 type RoomResponse struct {
-	ID        string    `json:"id"`
+	ID        string    `json:"uuid"`
 	Name      string    `json:"name"`
 	Type      RoomType  `json:"type"`
 	Floor     string    `json:"floor"`

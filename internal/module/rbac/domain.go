@@ -26,6 +26,9 @@ type RBACRepository interface {
 	GetRolePermissions(roleID string) ([]Permission, error)
 	AssignPermissionToRole(roleID, permissionID string) error
 	RemovePermissionFromRole(roleID, permissionID string) error
+	BatchAssignPermissionsToRole(roleID string, permissionIDs []string) error
+	BatchRemovePermissionsFromRole(roleID string, permissionIDs []string) error
+	BatchGetRolePermissions(roleIDs []string) (map[string][]Permission, error)
 
 	// User permission check (aggregated from all user's roles)
 	GetUserPermissions(userID string) ([]Permission, error)
@@ -53,6 +56,9 @@ type RBACUseCase interface {
 	GetRolePermissions(roleID string) ([]Permission, error)
 	AssignPermissionToRole(roleID, permissionID string) error
 	RemovePermissionFromRole(roleID, permissionID string) error
+	BatchAssignPermissionsToRole(roleID string, permissionIDs []string) error
+	BatchRemovePermissionsFromRole(roleID string, permissionIDs []string) error
+	BatchGetRolePermissions(roleIDs []string) (map[string][]Permission, error)
 
 	// Permission checking
 	CheckUserRole(userID string, roles ...string) (bool, error)

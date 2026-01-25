@@ -53,12 +53,12 @@ func (h *RBACHandler) GetRoles(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.RoleResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id} [get]
+// @Param        uuid  path      string  true  "Role UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.RoleResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/{uuid} [get]
 func (h *RBACHandler) GetRole(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 
@@ -129,14 +129,14 @@ func (h *RBACHandler) CreateRole(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string                  true  "Role ID"
+// @Param        uuid  path      string                  true  "Role UUID"
 // @Param        body  body      docs.CreateRoleRequest  true  "Role update data"
 // @Success      200   {object}  docs.SuccessResponse{data=docs.RoleResponse}
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      403   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id} [put]
+// @Router       /super-admin/roles/{uuid} [put]
 func (h *RBACHandler) UpdateRole(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 
@@ -171,12 +171,12 @@ func (h *RBACHandler) UpdateRole(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  docs.SuccessResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id} [delete]
+// @Param        uuid  path      string  true  "Role UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/{uuid} [delete]
 func (h *RBACHandler) DeleteRole(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 
@@ -226,12 +226,12 @@ func (h *RBACHandler) GetPermissions(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  docs.SuccessResponse{data=[]docs.PermissionResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id}/permissions [get]
+// @Param        uuid  path      string  true  "Role UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=[]docs.PermissionResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/{uuid}/permissions [get]
 func (h *RBACHandler) GetRolePermissions(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 
@@ -255,14 +255,14 @@ func (h *RBACHandler) GetRolePermissions(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string                       true  "Role ID"
+// @Param        uuid  path      string                       true  "Role UUID"
 // @Param        body  body      docs.AssignPermissionRequest true  "Permission assignment"
 // @Success      201   {object}  docs.SuccessResponse
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      403   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id}/permissions [post]
+// @Router       /super-admin/roles/{uuid}/permissions [post]
 func (h *RBACHandler) AssignPermissionToRole(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 
@@ -296,13 +296,13 @@ func (h *RBACHandler) AssignPermissionToRole(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id            path      string  true  "Role ID"
-// @Param        permissionId  path      string  true  "Permission ID"
+// @Param        uuid          path      string  true  "Role UUID"
+// @Param        permissionId  path      string  true  "Permission UUID"
 // @Success      200           {object}  docs.SuccessResponse
 // @Failure      401           {object}  docs.ErrorResponse
 // @Failure      403           {object}  docs.ErrorResponse
 // @Failure      404           {object}  docs.ErrorResponse
-// @Router       /super-admin/roles/{id}/permissions/{permissionId} [delete]
+// @Router       /super-admin/roles/{uuid}/permissions/{permissionId} [delete]
 func (h *RBACHandler) RemovePermissionFromRole(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 	permissionID := c.Params("permissionId")
@@ -319,6 +319,133 @@ func (h *RBACHandler) RemovePermissionFromRole(c *fiber.Ctx) error {
 	))
 }
 
+// BatchAssignPermissionsToRole godoc
+// @Summary      Batch assign permissions to role
+// @Description  Assigns multiple permissions to a role at once (Super Admin only)
+// @Tags         Super Admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        uuid  path      string                            true  "Role UUID"
+// @Param        body  body      docs.BatchAssignPermissionsRequest true  "Permission IDs to assign"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      400   {object}  docs.ErrorResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/{uuid}/permissions/batch [post]
+func (h *RBACHandler) BatchAssignPermissionsToRole(c *fiber.Ctx) error {
+	roleID := c.Params("id")
+
+	var req BatchAssignPermissionsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidRequestBody)))
+	}
+
+	if err := validator.ValidateStruct(req); err != nil {
+		validationErrors := validator.FormatValidationErrorForResponseBilingual(err)
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+	}
+
+	if err := h.rbacUseCase.BatchAssignPermissionsToRole(roleID, req.PermissionIDs); err != nil {
+		if appErr, ok := errors.IsAppError(err); ok {
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.New(errors.InternalServerError)))
+	}
+
+	return c.JSON(response.CreateSuccessResponse(
+		c, "Permission berhasil ditambahkan ke role", "Permissions assigned to role successfully", nil,
+	))
+}
+
+// BatchRemovePermissionsFromRole godoc
+// @Summary      Batch remove permissions from role
+// @Description  Removes multiple permissions from a role at once (Super Admin only)
+// @Tags         Super Admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        uuid  path      string                             true  "Role UUID"
+// @Param        body  body      docs.BatchRemovePermissionsRequest  true  "Permission IDs to remove"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      400   {object}  docs.ErrorResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/{uuid}/permissions/batch [delete]
+func (h *RBACHandler) BatchRemovePermissionsFromRole(c *fiber.Ctx) error {
+	roleID := c.Params("id")
+
+	var req BatchRemovePermissionsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidRequestBody)))
+	}
+
+	if err := validator.ValidateStruct(req); err != nil {
+		validationErrors := validator.FormatValidationErrorForResponseBilingual(err)
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+	}
+
+	if err := h.rbacUseCase.BatchRemovePermissionsFromRole(roleID, req.PermissionIDs); err != nil {
+		if appErr, ok := errors.IsAppError(err); ok {
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.New(errors.InternalServerError)))
+	}
+
+	return c.JSON(response.CreateSuccessResponse(
+		c, "Permission berhasil dihapus dari role", "Permissions removed from role successfully", nil,
+	))
+}
+
+// BatchGetRolePermissions godoc
+// @Summary      Batch get permissions by roles
+// @Description  Returns permissions for multiple roles at once (Super Admin only)
+// @Tags         Super Admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body      docs.BatchGetRolePermissionsRequest  true  "Role IDs to get permissions for"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.BatchRolePermissionsResponse}
+// @Failure      400   {object}  docs.ErrorResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /super-admin/roles/permissions/batch [post]
+func (h *RBACHandler) BatchGetRolePermissions(c *fiber.Ctx) error {
+	var req BatchGetRolePermissionsRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidRequestBody)))
+	}
+
+	if err := validator.ValidateStruct(req); err != nil {
+		validationErrors := validator.FormatValidationErrorForResponseBilingual(err)
+		appErr := errors.NewWithDetails(errors.ValidationFailed, validationErrors)
+		return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+	}
+
+	permissionsMap, err := h.rbacUseCase.BatchGetRolePermissions(req.RoleIDs)
+	if err != nil {
+		if appErr, ok := errors.IsAppError(err); ok {
+			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(response.CreateErrorResponse(c, errors.New(errors.InternalServerError)))
+	}
+
+	// Convert to response format
+	responseMap := make(map[string][]PermissionResponse)
+	for roleName, permissions := range permissionsMap {
+		responseMap[roleName] = ToPermissionResponses(permissions)
+	}
+
+	return c.JSON(response.CreateSuccessResponse(
+		c, "Permission role berhasil diambil", "Role permissions retrieved successfully", responseMap,
+	))
+}
+
 // ==================== User Role Endpoints ====================
 
 // GetUserRoles godoc
@@ -328,7 +455,7 @@ func (h *RBACHandler) RemovePermissionFromRole(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        userId  path      string  true  "User ID"
+// @Param        userId  path      string  true  "User UUID"
 // @Success      200     {object}  docs.SuccessResponse{data=docs.UserRolesResponse}
 // @Failure      401     {object}  docs.ErrorResponse
 // @Failure      403     {object}  docs.ErrorResponse
@@ -361,7 +488,7 @@ func (h *RBACHandler) GetUserRoles(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        userId  path      string                 true  "User ID"
+// @Param        userId  path      string                 true  "User UUID"
 // @Param        body    body      docs.AssignRoleRequest true  "Role assignment"
 // @Success      201     {object}  docs.SuccessResponse
 // @Failure      400     {object}  docs.ErrorResponse
@@ -402,8 +529,8 @@ func (h *RBACHandler) AssignRoleToUser(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        userId  path      string  true  "User ID"
-// @Param        roleId  path      string  true  "Role ID"
+// @Param        userId  path      string  true  "User UUID"
+// @Param        roleId  path      string  true  "Role UUID"
 // @Success      200     {object}  docs.SuccessResponse
 // @Failure      401     {object}  docs.ErrorResponse
 // @Failure      403     {object}  docs.ErrorResponse

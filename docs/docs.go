@@ -98,7 +98,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/docs.AlertListDocResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/docs.AlertDocResponse"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/definitions/docs.MetaResponse"
                                         }
                                     }
                                 }
@@ -224,7 +230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/{id}": {
+        "/alerts/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -245,8 +251,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Alert ID",
-                        "name": "id",
+                        "description": "Alert UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -285,7 +291,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/{id}/acknowledge": {
+        "/alerts/{uuid}/acknowledge": {
             "post": {
                 "security": [
                     {
@@ -306,8 +312,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Alert ID",
-                        "name": "id",
+                        "description": "Alert UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -316,7 +322,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -340,7 +346,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/{id}/history": {
+        "/alerts/{uuid}/history": {
             "get": {
                 "security": [
                     {
@@ -361,8 +367,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Alert ID",
-                        "name": "id",
+                        "description": "Alert UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -404,7 +410,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/alerts/{id}/resolve": {
+        "/alerts/{uuid}/resolve": {
             "post": {
                 "security": [
                     {
@@ -425,8 +431,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Alert ID",
-                        "name": "id",
+                        "description": "Alert UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -444,7 +450,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -948,7 +954,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/docs.DeviceListDocResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/docs.DeviceDocResponse"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/definitions/docs.MetaResponse"
                                         }
                                     }
                                 }
@@ -1069,7 +1081,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/devices/{id}": {
+        "/devices/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -1090,8 +1102,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Device ID",
-                        "name": "id",
+                        "description": "Device UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1149,8 +1161,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Device ID",
-                        "name": "id",
+                        "description": "Device UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -1223,8 +1235,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Device ID",
-                        "name": "id",
+                        "description": "Device UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1233,7 +1245,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -1257,7 +1269,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/devices/{id}/status": {
+        "/devices/{uuid}/status": {
             "put": {
                 "security": [
                     {
@@ -1278,8 +1290,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Device ID",
-                        "name": "id",
+                        "description": "Device UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -1297,7 +1309,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "400": {
@@ -1556,14 +1568,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/messages/{id}": {
+        "/messages/{uuid}": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Gets a message by ID",
+                "description": "Gets a message by UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -1574,8 +1586,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Message ID",
-                        "name": "id",
+                        "description": "Message UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1607,7 +1619,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes a message by ID",
+                "description": "Deletes a message by UUID",
                 "produces": [
                     "application/json"
                 ],
@@ -1618,8 +1630,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Message ID",
-                        "name": "id",
+                        "description": "Message UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1646,7 +1658,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/messages/{id}/read": {
+        "/messages/{uuid}/read": {
             "put": {
                 "security": [
                     {
@@ -1664,8 +1676,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Message ID",
-                        "name": "id",
+                        "description": "Message UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1756,7 +1768,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/docs.PatientListDocResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/docs.PatientDocResponse"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/definitions/docs.MetaResponse"
                                         }
                                     }
                                 }
@@ -1833,7 +1851,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/patients/{id}": {
+        "/patients/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -1854,8 +1872,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Patient ID",
-                        "name": "id",
+                        "description": "Patient UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1913,8 +1931,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Patient ID",
-                        "name": "id",
+                        "description": "Patient UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -1987,8 +2005,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Patient ID",
-                        "name": "id",
+                        "description": "Patient UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -1997,7 +2015,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -2021,7 +2039,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/patients/{id}/condition": {
+        "/patients/{uuid}/condition": {
             "put": {
                 "security": [
                     {
@@ -2042,8 +2060,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Patient ID",
-                        "name": "id",
+                        "description": "Patient UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -2061,7 +2079,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "400": {
@@ -2085,7 +2103,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/patients/{id}/discharge": {
+        "/patients/{uuid}/discharge": {
             "post": {
                 "security": [
                     {
@@ -2106,8 +2124,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Patient ID",
-                        "name": "id",
+                        "description": "Patient UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2116,7 +2134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -2204,7 +2222,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/docs.RoomListDocResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/docs.RoomDocResponse"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/definitions/docs.MetaResponse"
                                         }
                                     }
                                 }
@@ -2287,7 +2311,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/rooms/{id}": {
+        "/rooms/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -2308,8 +2332,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Room ID",
-                        "name": "id",
+                        "description": "Room UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2367,8 +2391,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Room ID",
-                        "name": "id",
+                        "description": "Room UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -2447,8 +2471,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Room ID",
-                        "name": "id",
+                        "description": "Room UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2551,7 +2575,13 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/docs.StaffListDocResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/docs.StaffDocResponse"
+                                            }
+                                        },
+                                        "meta": {
+                                            "$ref": "#/definitions/docs.MetaResponse"
                                         }
                                     }
                                 }
@@ -2691,7 +2721,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/staff/{id}": {
+        "/staff/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -2712,8 +2742,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2771,8 +2801,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -2845,8 +2875,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2855,7 +2885,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -2879,7 +2909,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/staff/{id}/rooms": {
+        "/staff/{uuid}/rooms": {
             "get": {
                 "security": [
                     {
@@ -2900,8 +2930,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -2962,8 +2992,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -2981,7 +3011,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "400": {
@@ -3005,7 +3035,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/staff/{id}/rooms/{roomId}": {
+        "/staff/{uuid}/rooms/{roomId}": {
             "delete": {
                 "security": [
                     {
@@ -3026,14 +3056,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Room ID",
+                        "description": "Room UUID",
                         "name": "roomId",
                         "in": "path",
                         "required": true
@@ -3043,7 +3073,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -3061,7 +3091,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/staff/{id}/shift": {
+        "/staff/{uuid}/shift": {
             "put": {
                 "security": [
                     {
@@ -3082,8 +3112,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -3101,7 +3131,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "400": {
@@ -3125,7 +3155,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/staff/{id}/toggle-duty": {
+        "/staff/{uuid}/toggle-duty": {
             "post": {
                 "security": [
                     {
@@ -3146,8 +3176,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Staff ID",
-                        "name": "id",
+                        "description": "Staff UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -3156,7 +3186,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/docs.ErrorResponse"
+                            "$ref": "#/definitions/docs.SuccessResponse"
                         }
                     },
                     "401": {
@@ -3357,7 +3387,82 @@ const docTemplate = `{
                 }
             }
         },
-        "/super-admin/roles/{id}": {
+        "/super-admin/roles/permissions/batch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns permissions for multiple roles at once (Super Admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Super Admin"
+                ],
+                "summary": "Batch get permissions by roles",
+                "parameters": [
+                    {
+                        "description": "Role IDs to get permissions for",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/docs.BatchGetRolePermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/docs.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/docs.BatchRolePermissionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/super-admin/roles/{uuid}": {
             "get": {
                 "security": [
                     {
@@ -3378,8 +3483,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -3443,8 +3548,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -3523,8 +3628,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -3557,7 +3662,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/super-admin/roles/{id}/permissions": {
+        "/super-admin/roles/{uuid}/permissions": {
             "get": {
                 "security": [
                     {
@@ -3578,8 +3683,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     }
@@ -3646,8 +3751,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
@@ -3695,7 +3800,145 @@ const docTemplate = `{
                 }
             }
         },
-        "/super-admin/roles/{id}/permissions/{permissionId}": {
+        "/super-admin/roles/{uuid}/permissions/batch": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Assigns multiple permissions to a role at once (Super Admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Super Admin"
+                ],
+                "summary": "Batch assign permissions to role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Permission IDs to assign",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/docs.BatchAssignPermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/docs.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes multiple permissions from a role at once (Super Admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Super Admin"
+                ],
+                "summary": "Batch remove permissions from role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role UUID",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Permission IDs to remove",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/docs.BatchRemovePermissionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/docs.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/docs.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/super-admin/roles/{uuid}/permissions/{permissionId}": {
             "delete": {
                 "security": [
                     {
@@ -3716,14 +3959,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Role ID",
-                        "name": "id",
+                        "description": "Role UUID",
+                        "name": "uuid",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Permission ID",
+                        "description": "Permission UUID",
                         "name": "permissionId",
                         "in": "path",
                         "required": true
@@ -3778,7 +4021,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User UUID",
                         "name": "userId",
                         "in": "path",
                         "required": true
@@ -3837,7 +4080,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User UUID",
                         "name": "userId",
                         "in": "path",
                         "required": true
@@ -3907,14 +4150,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User UUID",
                         "name": "userId",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Role ID",
+                        "description": "Role UUID",
                         "name": "roleId",
                         "in": "path",
                         "required": true
@@ -3955,7 +4198,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "John Nurse"
                 },
-                "assigned_staff_id": {
+                "assigned_staff_uuid": {
                     "type": "string"
                 },
                 "created_at": {
@@ -3967,27 +4210,23 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "device_id": {
+                "device_uuid": {
                     "type": "string"
                 },
                 "escalation_count": {
                     "type": "integer",
                     "example": 0
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "message": {
                     "type": "string",
                     "example": "Patient requesting assistance"
                 },
-                "patient_id": {
-                    "type": "string"
-                },
                 "patient_name": {
                     "type": "string",
                     "example": "Jane Doe"
+                },
+                "patient_uuid": {
+                    "type": "string"
                 },
                 "priority": {
                     "type": "string",
@@ -3996,13 +4235,13 @@ const docTemplate = `{
                 "resolved_at": {
                     "type": "string"
                 },
-                "room_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "room_name": {
                     "type": "string",
                     "example": "Room 101"
+                },
+                "room_uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "status": {
                     "type": "string",
@@ -4014,6 +4253,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4028,10 +4271,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "new_status": {
                     "type": "string",
                     "example": "acknowledged"
@@ -4043,34 +4282,10 @@ const docTemplate = `{
                 "previous_status": {
                     "type": "string",
                     "example": "pending"
-                }
-            }
-        },
-        "docs.AlertListDocResponse": {
-            "description": "Paginated alert list",
-            "type": "object",
-            "properties": {
-                "alerts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/docs.AlertDocResponse"
-                    }
                 },
-                "limit": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 50
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 5
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4125,6 +4340,81 @@ const docTemplate = `{
                 }
             }
         },
+        "docs.BatchAssignPermissionsRequest": {
+            "description": "Batch permission assignment request",
+            "type": "object",
+            "required": [
+                "permission_ids"
+            ],
+            "properties": {
+                "permission_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "660e8400-e29b-41d4-a716-446655440001"
+                    ]
+                }
+            }
+        },
+        "docs.BatchGetRolePermissionsRequest": {
+            "description": "Batch get role permissions request",
+            "type": "object",
+            "required": [
+                "role_ids"
+            ],
+            "properties": {
+                "role_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "660e8400-e29b-41d4-a716-446655440001"
+                    ]
+                }
+            }
+        },
+        "docs.BatchRemovePermissionsRequest": {
+            "description": "Batch permission removal request",
+            "type": "object",
+            "required": [
+                "permission_ids"
+            ],
+            "properties": {
+                "permission_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "550e8400-e29b-41d4-a716-446655440000",
+                        "660e8400-e29b-41d4-a716-446655440001"
+                    ]
+                }
+            }
+        },
+        "docs.BatchRolePermissionsResponse": {
+            "description": "Batch role permissions response with permissions grouped by role UUID",
+            "type": "object",
+            "properties": {
+                "role_permissions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/docs.PermissionResponse"
+                        }
+                    }
+                }
+            }
+        },
         "docs.CreateRoleRequest": {
             "description": "Role creation request",
             "type": "object",
@@ -4156,10 +4446,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "last_heartbeat": {
                     "type": "string"
                 },
@@ -4167,7 +4453,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Room 101 Microphone"
                 },
-                "room_id": {
+                "room_uuid": {
                     "type": "string"
                 },
                 "serial_number": {
@@ -4184,34 +4470,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
-                }
-            }
-        },
-        "docs.DeviceListDocResponse": {
-            "description": "Paginated device list",
-            "type": "object",
-            "properties": {
-                "devices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/docs.DeviceDocResponse"
-                    }
                 },
-                "limit": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 50
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 5
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4230,10 +4492,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "last_heartbeat": {
                     "type": "string"
                 },
@@ -4241,7 +4499,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Room 101 Microphone"
                 },
-                "room_id": {
+                "room_uuid": {
                     "type": "string"
                 },
                 "serial_number": {
@@ -4258,6 +4516,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4273,6 +4535,7 @@ const docTemplate = `{
                     "type": "integer",
                     "example": -1001
                 },
+                "errors": {},
                 "message": {
                     "type": "string",
                     "example": "Error occurred"
@@ -4304,6 +4567,36 @@ const docTemplate = `{
                 }
             }
         },
+        "docs.MetaResponse": {
+            "description": "Pagination metadata for list responses",
+            "type": "object",
+            "properties": {
+                "is_back": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "is_next": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "page_size": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_page": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
         "docs.PatientDocResponse": {
             "description": "Patient information",
             "type": "object",
@@ -4329,10 +4622,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "female"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "medical_record_number": {
                     "type": "string",
                     "example": "MRN-001"
@@ -4340,9 +4629,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "Jane Doe"
-                },
-                "room_id": {
-                    "type": "string"
                 },
                 "room_name": {
                     "type": "string",
@@ -4352,36 +4638,15 @@ const docTemplate = `{
                     "type": "string",
                     "example": "patient_room"
                 },
+                "room_uuid": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
-                }
-            }
-        },
-        "docs.PatientListDocResponse": {
-            "description": "Paginated patient list",
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "example": 10
                 },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "patients": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/docs.PatientDocResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 200
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 20
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4400,10 +4665,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "View users"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "name": {
                     "type": "string",
                     "example": "users:read"
@@ -4411,6 +4672,10 @@ const docTemplate = `{
                 "resource": {
                     "type": "string",
                     "example": "users"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4463,13 +4728,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Full system access"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "name": {
                     "type": "string",
                     "example": "superadmin"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4480,15 +4745,15 @@ const docTemplate = `{
                 "assigned_at": {
                     "type": "string"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "is_primary": {
                     "type": "boolean",
                     "example": true
                 },
-                "room_id": {
+                "room_uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "uuid": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
@@ -4513,10 +4778,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "1"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "is_active": {
                     "type": "boolean",
                     "example": true
@@ -4531,34 +4792,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
-                }
-            }
-        },
-        "docs.RoomListDocResponse": {
-            "description": "Paginated room list",
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "example": 10
                 },
-                "page": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "rooms": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/docs.RoomDocResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 100
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 10
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4576,10 +4813,6 @@ const docTemplate = `{
                 "employee_id": {
                     "type": "string",
                     "example": "EMP-001"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "on_duty": {
                     "type": "boolean",
@@ -4604,41 +4837,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "john@hospital.com"
                 },
-                "user_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "user_name": {
                     "type": "string",
                     "example": "John Doe"
-                }
-            }
-        },
-        "docs.StaffListDocResponse": {
-            "description": "Paginated staff list",
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "example": 10
                 },
-                "page": {
-                    "type": "integer",
-                    "example": 1
+                "user_uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
-                "staff": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/docs.StaffDocResponse"
-                    }
-                },
-                "total": {
-                    "type": "integer",
-                    "example": 25
-                },
-                "total_pages": {
-                    "type": "integer",
-                    "example": 3
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4654,6 +4863,9 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Operation successful"
+                },
+                "meta": {
+                    "$ref": "#/definitions/docs.MetaResponse"
                 },
                 "status": {
                     "type": "boolean",
@@ -4708,10 +4920,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "patient@example.com"
                 },
-                "id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
                 "name": {
                     "type": "string",
                     "example": "John Doe"
@@ -4722,6 +4930,10 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -4735,7 +4947,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/docs.RoleResponse"
                     }
                 },
-                "user_id": {
+                "user_uuid": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 }

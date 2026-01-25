@@ -70,11 +70,11 @@ func (h *DeviceHandler) RegisterDevice(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Device ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.DeviceDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /devices/{id} [get]
+// @Param        uuid  path      string  true  "Device UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.DeviceDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /devices/{uuid} [get]
 func (h *DeviceHandler) GetDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -104,7 +104,7 @@ func (h *DeviceHandler) GetDevice(c *fiber.Ctx) error {
 // @Param        status  query     string  false  "Device status filter"
 // @Param        page    query     int     false  "Page number" default(1)
 // @Param        limit   query     int     false  "Items per page" default(10)
-// @Success      200     {object}  docs.SuccessResponse{data=docs.DeviceListDocResponse}
+// @Success      200     {object}  docs.SuccessResponse{data=[]docs.DeviceDocResponse,meta=docs.MetaResponse}
 // @Failure      401     {object}  docs.ErrorResponse
 // @Router       /devices [get]
 func (h *DeviceHandler) GetDevices(c *fiber.Ctx) error {
@@ -130,21 +130,22 @@ func (h *DeviceHandler) GetDevices(c *fiber.Ctx) error {
 		deviceResponses = append(deviceResponses, device.ToResponse())
 	}
 
-	totalPages := total / filter.Limit
+	totalPages := int64(total / filter.Limit)
 	if total%filter.Limit > 0 {
 		totalPages++
 	}
 
-	listResponse := DeviceListResponse{
-		Devices:    deviceResponses,
-		Total:      total,
-		Page:       filter.Page,
-		Limit:      filter.Limit,
-		TotalPages: totalPages,
+	meta := &response.MetaResponse{
+		Page:      int64(filter.Page),
+		PageSize:  int64(filter.Limit),
+		Total:     int64(total),
+		TotalPage: totalPages,
+		IsNext:    int64(filter.Page) < totalPages,
+		IsBack:    filter.Page > 1,
 	}
 
-	return c.JSON(response.CreateSuccessResponse(
-		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, listResponse,
+	return c.JSON(response.CreatePaginatedResponse(
+		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, deviceResponses, meta,
 	))
 }
 
@@ -155,13 +156,13 @@ func (h *DeviceHandler) GetDevices(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string              true  "Device ID"
+// @Param        uuid  path      string              true  "Device UUID"
 // @Param        body  body      UpdateDeviceRequest true  "Device update data"
 // @Success      200   {object}  docs.SuccessResponse{data=docs.DeviceDocResponse}
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /devices/{id} [put]
+// @Router       /devices/{uuid} [put]
 func (h *DeviceHandler) UpdateDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -198,13 +199,13 @@ func (h *DeviceHandler) UpdateDevice(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string                    true  "Device ID"
+// @Param        uuid  path      string                    true  "Device UUID"
 // @Param        body  body      UpdateDeviceStatusRequest true  "Status update"
-// @Success      200   {object}  docs.ErrorResponse
+// @Success      200   {object}  docs.SuccessResponse
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /devices/{id}/status [put]
+// @Router       /devices/{uuid}/status [put]
 func (h *DeviceHandler) UpdateDeviceStatus(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -279,12 +280,12 @@ func (h *DeviceHandler) Heartbeat(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Device ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /devices/{id} [delete]
+// @Param        uuid  path      string  true  "Device UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /devices/{uuid} [delete]
 func (h *DeviceHandler) DeleteDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 

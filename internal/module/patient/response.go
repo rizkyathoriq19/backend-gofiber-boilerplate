@@ -6,8 +6,8 @@ import (
 
 // PatientResponse represents the patient response
 type PatientResponse struct {
-	ID                  string         `json:"id"`
-	RoomID              *string        `json:"room_id"`
+	ID                  string         `json:"uuid"`
+	RoomID              *string        `json:"room_uuid"`
 	MedicalRecordNumber string         `json:"medical_record_number"`
 	Name                string         `json:"name"`
 	DateOfBirth         *time.Time     `json:"date_of_birth"`

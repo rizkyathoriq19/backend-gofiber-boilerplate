@@ -6,8 +6,8 @@ import (
 
 // DeviceResponse represents the device response
 type DeviceResponse struct {
-	ID            string                 `json:"id"`
-	RoomID        *string                `json:"room_id"`
+	ID            string                 `json:"uuid"`
+	RoomID        *string                `json:"room_uuid"`
 	Type          DeviceType             `json:"type"`
 	SerialNumber  string                 `json:"serial_number"`
 	Name          string                 `json:"name"`

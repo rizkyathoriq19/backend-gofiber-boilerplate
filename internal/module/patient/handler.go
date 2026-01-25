@@ -64,11 +64,11 @@ func (h *PatientHandler) AdmitPatient(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Patient ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.PatientDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /patients/{id} [get]
+// @Param        uuid   path      string  true  "Patient UUID"
+// @Success      200    {object}  docs.SuccessResponse{data=docs.PatientDocResponse}
+// @Failure      401    {object}  docs.ErrorResponse
+// @Failure      404    {object}  docs.ErrorResponse
+// @Router       /patients/{uuid} [get]
 func (h *PatientHandler) GetPatient(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -98,7 +98,7 @@ func (h *PatientHandler) GetPatient(c *fiber.Ctx) error {
 // @Param        is_admitted     query     bool    false  "Admission status filter"
 // @Param        page            query     int     false  "Page number" default(1)
 // @Param        limit           query     int     false  "Items per page" default(10)
-// @Success      200             {object}  docs.SuccessResponse{data=docs.PatientListDocResponse}
+// @Success      200             {object}  docs.SuccessResponse{data=[]docs.PatientDocResponse,meta=docs.MetaResponse}
 // @Failure      401             {object}  docs.ErrorResponse
 // @Router       /patients [get]
 func (h *PatientHandler) GetPatients(c *fiber.Ctx) error {
@@ -128,21 +128,22 @@ func (h *PatientHandler) GetPatients(c *fiber.Ctx) error {
 		patientResponses = append(patientResponses, patient.ToResponse())
 	}
 
-	totalPages := total / filter.Limit
+	totalPages := int64(total / filter.Limit)
 	if total%filter.Limit > 0 {
 		totalPages++
 	}
 
-	listResponse := PatientListResponse{
-		Patients:   patientResponses,
-		Total:      total,
-		Page:       filter.Page,
-		Limit:      filter.Limit,
-		TotalPages: totalPages,
+	meta := &response.MetaResponse{
+		Page:      int64(filter.Page),
+		PageSize:  int64(filter.Limit),
+		Total:     int64(total),
+		TotalPage: totalPages,
+		IsNext:    int64(filter.Page) < totalPages,
+		IsBack:    filter.Page > 1,
 	}
 
-	return c.JSON(response.CreateSuccessResponse(
-		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, listResponse,
+	return c.JSON(response.CreatePaginatedResponse(
+		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, patientResponses, meta,
 	))
 }
 
@@ -153,13 +154,13 @@ func (h *PatientHandler) GetPatients(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string               true  "Patient ID"
+// @Param        uuid  path      string               true  "Patient UUID"
 // @Param        body  body      UpdatePatientRequest true  "Patient update data"
 // @Success      200   {object}  docs.SuccessResponse{data=docs.PatientDocResponse}
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /patients/{id} [put]
+// @Router       /patients/{uuid} [put]
 func (h *PatientHandler) UpdatePatient(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -196,13 +197,13 @@ func (h *PatientHandler) UpdatePatient(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string                  true  "Patient ID"
+// @Param        uuid  path      string                  true  "Patient UUID"
 // @Param        body  body      UpdateConditionRequest  true  "Condition update data"
-// @Success      200   {object}  docs.ErrorResponse
+// @Success      200   {object}  docs.SuccessResponse
 // @Failure      400   {object}  docs.ErrorResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /patients/{id}/condition [put]
+// @Router       /patients/{uuid}/condition [put]
 func (h *PatientHandler) UpdateConditionLevel(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -238,11 +239,11 @@ func (h *PatientHandler) UpdateConditionLevel(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Patient ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /patients/{id}/discharge [post]
+// @Param        uuid  path      string  true  "Patient UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /patients/{uuid}/discharge [post]
 func (h *PatientHandler) DischargePatient(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -266,12 +267,12 @@ func (h *PatientHandler) DischargePatient(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Patient ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /patients/{id} [delete]
+// @Param        uuid  path      string  true  "Patient UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /patients/{uuid} [delete]
 func (h *PatientHandler) DeletePatient(c *fiber.Ctx) error {
 	id := c.Params("id")
 

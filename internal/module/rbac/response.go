@@ -4,7 +4,7 @@ import "time"
 
 // RoleResponse is the response for a single role
 type RoleResponse struct {
-	ID          string    `json:"id"`
+	ID          string    `json:"uuid"`
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -12,7 +12,7 @@ type RoleResponse struct {
 
 // PermissionResponse is the response for a single permission
 type PermissionResponse struct {
-	ID          string    `json:"id"`
+	ID          string    `json:"uuid"`
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
 	Resource    string    `json:"resource"`
@@ -28,8 +28,13 @@ type RoleWithPermissionsResponse struct {
 
 // UserRolesResponse contains user's roles
 type UserRolesResponse struct {
-	UserID string         `json:"user_id"`
+	UserID string         `json:"user_uuid"`
 	Roles  []RoleResponse `json:"roles"`
+}
+
+// BatchRolePermissionsResponse contains permissions grouped by role
+type BatchRolePermissionsResponse struct {
+	RolePermissions map[string][]PermissionResponse `json:"role_permissions"`
 }
 
 // ToRoleResponse converts Role entity to RoleResponse

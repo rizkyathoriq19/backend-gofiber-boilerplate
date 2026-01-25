@@ -21,3 +21,18 @@ type AssignRoleRequest struct {
 type AssignPermissionRequest struct {
 	PermissionID string `json:"permission_id" validate:"required,uuid"`
 }
+
+// BatchAssignPermissionsRequest is the request body for batch assigning permissions to a role
+type BatchAssignPermissionsRequest struct {
+	PermissionIDs []string `json:"permission_ids" validate:"required,min=1,dive,uuid"`
+}
+
+// BatchRemovePermissionsRequest is the request body for batch removing permissions from a role
+type BatchRemovePermissionsRequest struct {
+	PermissionIDs []string `json:"permission_ids" validate:"required,min=1,dive,uuid"`
+}
+
+// BatchGetRolePermissionsRequest is the request body for batch getting permissions by roles
+type BatchGetRolePermissionsRequest struct {
+	RoleIDs []string `json:"role_ids" validate:"required,min=1,dive,uuid"`
+}

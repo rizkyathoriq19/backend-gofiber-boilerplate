@@ -6,8 +6,8 @@ import (
 
 // StaffResponse represents the staff response
 type StaffResponse struct {
-	ID         string    `json:"id"`
-	UserID     string    `json:"user_id"`
+	ID         string    `json:"uuid"`
+	UserID     string    `json:"user_uuid"`
 	EmployeeID string    `json:"employee_id"`
 	Type       StaffType `json:"type"`
 	Department string    `json:"department"`
@@ -36,8 +36,8 @@ type StaffListResponse struct {
 
 // RoomAssignmentResponse represents a room assignment
 type RoomAssignmentResponse struct {
-	ID         string    `json:"id"`
-	RoomID     string    `json:"room_id"`
+	ID         string    `json:"uuid"`
+	RoomID     string    `json:"room_uuid"`
 	IsPrimary  bool      `json:"is_primary"`
 	AssignedAt time.Time `json:"assigned_at"`
 }

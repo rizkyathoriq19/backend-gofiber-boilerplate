@@ -3,30 +3,63 @@ package docs
 
 import "time"
 
+// BaseResponse represents the standard API response wrapper
+// @Description Standard API response wrapper used for all endpoints
+type BaseResponse struct {
+	Status    bool          `json:"status" example:"true"`
+	Code      int           `json:"code" example:"200"`
+	Message   string        `json:"message" example:"Operation successful"`
+	ErrorCode int           `json:"error_code,omitempty" example:"0"`
+	Errors    interface{}   `json:"errors,omitempty"`
+	Data      interface{}   `json:"data,omitempty"`
+	Meta      *MetaResponse `json:"meta,omitempty"`
+	Timestamp time.Time     `json:"timestamp"`
+}
+
+// MetaResponse represents pagination metadata
+// @Description Pagination metadata for list responses
+type MetaResponse struct {
+	Page      int64 `json:"page" example:"1"`
+	PageSize  int64 `json:"page_size" example:"10"`
+	Total     int64 `json:"total" example:"100"`
+	TotalPage int64 `json:"total_page" example:"10"`
+	IsNext    bool  `json:"is_next" example:"true"`
+	IsBack    bool  `json:"is_back" example:"false"`
+}
+
 // SuccessResponse represents a successful API response
 // @Description Standard success response wrapper
 type SuccessResponse struct {
-	Status    bool        `json:"status" example:"true"`
-	Code      int         `json:"code" example:"200"`
-	Message   string      `json:"message" example:"Operation successful"`
-	Data      interface{} `json:"data,omitempty"`
-	Timestamp time.Time   `json:"timestamp"`
+	Status    bool          `json:"status" example:"true"`
+	Code      int           `json:"code" example:"200"`
+	Message   string        `json:"message" example:"Operation successful"`
+	Data      interface{}   `json:"data,omitempty"`
+	Meta      *MetaResponse `json:"meta,omitempty"`
+	Timestamp time.Time     `json:"timestamp"`
 }
 
 // ErrorResponse represents an error API response
 // @Description Standard error response wrapper
 type ErrorResponse struct {
-	Status    bool      `json:"status" example:"false"`
-	Code      int       `json:"code" example:"400"`
-	Message   string    `json:"message" example:"Error occurred"`
-	ErrorCode int       `json:"error_code,omitempty" example:"-1001"`
-	Timestamp time.Time `json:"timestamp"`
+	Status    bool        `json:"status" example:"false"`
+	Code      int         `json:"code" example:"400"`
+	Message   string      `json:"message" example:"Error occurred"`
+	ErrorCode int         `json:"error_code,omitempty" example:"-1001"`
+	Errors    interface{} `json:"errors,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+// ValidationError represents a single field validation error
+// @Description Field validation error details
+type ValidationError struct {
+	Field   string `json:"field" example:"email"`
+	Message string `json:"message" example:"Email format is invalid"`
 }
 
 // UserResponse represents user data in responses
 // @Description User information
 type UserResponse struct {
-	ID        string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID      string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name      string    `json:"name" example:"John Doe"`
 	Email     string    `json:"email" example:"patient@example.com"`
 	Role      string    `json:"role" example:"patient"`
@@ -56,7 +89,7 @@ type TokenResponse struct {
 // RoleResponse represents role data
 // @Description Role information
 type RoleResponse struct {
-	ID          string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID        string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name        string    `json:"name" example:"superadmin"`
 	Description string    `json:"description,omitempty" example:"Full system access"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -65,7 +98,7 @@ type RoleResponse struct {
 // PermissionResponse represents permission data
 // @Description Permission information
 type PermissionResponse struct {
-	ID          string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID        string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name        string    `json:"name" example:"users:read"`
 	Description string    `json:"description,omitempty" example:"View users"`
 	Resource    string    `json:"resource" example:"users"`
@@ -76,8 +109,8 @@ type PermissionResponse struct {
 // UserRolesResponse represents user with their roles
 // @Description User roles response
 type UserRolesResponse struct {
-	UserID string         `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Roles  []RoleResponse `json:"roles"`
+	UserUUID string         `json:"user_uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Roles    []RoleResponse `json:"roles"`
 }
 
 // RegisterRequest represents registration payload
@@ -126,12 +159,36 @@ type AssignPermissionRequest struct {
 	PermissionID string `json:"permission_id" example:"550e8400-e29b-41d4-a716-446655440000" validate:"required,uuid"`
 }
 
+// BatchAssignPermissionsRequest represents batch permission assignment payload
+// @Description Batch permission assignment request
+type BatchAssignPermissionsRequest struct {
+	PermissionIDs []string `json:"permission_ids" example:"550e8400-e29b-41d4-a716-446655440000,660e8400-e29b-41d4-a716-446655440001" validate:"required,min=1,dive,uuid"`
+}
+
+// BatchRemovePermissionsRequest represents batch permission removal payload
+// @Description Batch permission removal request
+type BatchRemovePermissionsRequest struct {
+	PermissionIDs []string `json:"permission_ids" example:"550e8400-e29b-41d4-a716-446655440000,660e8400-e29b-41d4-a716-446655440001" validate:"required,min=1,dive,uuid"`
+}
+
+// BatchGetRolePermissionsRequest represents batch get role permissions payload
+// @Description Batch get role permissions request
+type BatchGetRolePermissionsRequest struct {
+	RoleIDs []string `json:"role_ids" example:"550e8400-e29b-41d4-a716-446655440000,660e8400-e29b-41d4-a716-446655440001" validate:"required,min=1,dive,uuid"`
+}
+
+// BatchRolePermissionsResponse represents batch role permissions response
+// @Description Batch role permissions response with permissions grouped by role UUID
+type BatchRolePermissionsResponse struct {
+	RolePermissions map[string][]PermissionResponse `json:"role_permissions"`
+}
+
 // ========== MEDIPROMPT Types ==========
 
 // RoomDocResponse represents room data
 // @Description Room information
 type RoomDocResponse struct {
-	ID        string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID      string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Name      string    `json:"name" example:"Room 101"`
 	Type      string    `json:"type" example:"patient_room"`
 	Floor     string    `json:"floor" example:"1"`
@@ -142,21 +199,11 @@ type RoomDocResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// RoomListDocResponse represents paginated room list
-// @Description Paginated room list
-type RoomListDocResponse struct {
-	Rooms      []RoomDocResponse `json:"rooms"`
-	Total      int               `json:"total" example:"100"`
-	Page       int               `json:"page" example:"1"`
-	Limit      int               `json:"limit" example:"10"`
-	TotalPages int               `json:"total_pages" example:"10"`
-}
-
 // DeviceDocResponse represents device data
 // @Description Device information
 type DeviceDocResponse struct {
-	ID            string                 `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	RoomID        *string                `json:"room_id"`
+	UUID          string                 `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomUUID      *string                `json:"room_uuid"`
 	Type          string                 `json:"type" example:"microphone"`
 	SerialNumber  string                 `json:"serial_number" example:"MIC-001"`
 	Name          string                 `json:"name" example:"Room 101 Microphone"`
@@ -174,21 +221,11 @@ type DeviceWithAPIKeyDocResponse struct {
 	APIKey string `json:"api_key" example:"mp_abc123def456..."`
 }
 
-// DeviceListDocResponse represents paginated device list
-// @Description Paginated device list
-type DeviceListDocResponse struct {
-	Devices    []DeviceDocResponse `json:"devices"`
-	Total      int                 `json:"total" example:"50"`
-	Page       int                 `json:"page" example:"1"`
-	Limit      int                 `json:"limit" example:"10"`
-	TotalPages int                 `json:"total_pages" example:"5"`
-}
-
 // StaffDocResponse represents staff data
 // @Description Staff information
 type StaffDocResponse struct {
-	ID         string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	UserID     string    `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID       string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UserUUID   string    `json:"user_uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	EmployeeID string    `json:"employee_id" example:"EMP-001"`
 	Type       string    `json:"type" example:"nurse"`
 	Department string    `json:"department" example:"ICU"`
@@ -201,21 +238,11 @@ type StaffDocResponse struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
-// StaffListDocResponse represents paginated staff list
-// @Description Paginated staff list
-type StaffListDocResponse struct {
-	Staff      []StaffDocResponse `json:"staff"`
-	Total      int                `json:"total" example:"25"`
-	Page       int                `json:"page" example:"1"`
-	Limit      int                `json:"limit" example:"10"`
-	TotalPages int                `json:"total_pages" example:"3"`
-}
-
 // RoomAssignmentDocResponse represents room assignment
 // @Description Staff room assignment
 type RoomAssignmentDocResponse struct {
-	ID         string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	RoomID     string    `json:"room_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID       string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomUUID   string    `json:"room_uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	IsPrimary  bool      `json:"is_primary" example:"true"`
 	AssignedAt time.Time `json:"assigned_at"`
 }
@@ -223,8 +250,8 @@ type RoomAssignmentDocResponse struct {
 // PatientDocResponse represents patient data
 // @Description Patient information
 type PatientDocResponse struct {
-	ID                  string     `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	RoomID              *string    `json:"room_id"`
+	UUID                string     `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomUUID            *string    `json:"room_uuid"`
 	MedicalRecordNumber string     `json:"medical_record_number" example:"MRN-001"`
 	Name                string     `json:"name" example:"Jane Doe"`
 	Gender              string     `json:"gender" example:"female"`
@@ -238,24 +265,14 @@ type PatientDocResponse struct {
 	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
-// PatientListDocResponse represents paginated patient list
-// @Description Paginated patient list
-type PatientListDocResponse struct {
-	Patients   []PatientDocResponse `json:"patients"`
-	Total      int                  `json:"total" example:"200"`
-	Page       int                  `json:"page" example:"1"`
-	Limit      int                  `json:"limit" example:"10"`
-	TotalPages int                  `json:"total_pages" example:"20"`
-}
-
 // AlertDocResponse represents alert data
 // @Description Alert information
 type AlertDocResponse struct {
-	ID                string     `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	RoomID            string     `json:"room_id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	PatientID         *string    `json:"patient_id"`
-	DeviceID          *string    `json:"device_id"`
-	AssignedStaffID   *string    `json:"assigned_staff_id"`
+	UUID              string     `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	RoomUUID          string     `json:"room_uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
+	PatientUUID       *string    `json:"patient_uuid"`
+	DeviceUUID        *string    `json:"device_uuid"`
+	AssignedStaffUUID *string    `json:"assigned_staff_uuid"`
 	Type              string     `json:"type" example:"voice_call"`
 	Priority          string     `json:"priority" example:"high"`
 	Status            string     `json:"status" example:"pending"`
@@ -271,20 +288,10 @@ type AlertDocResponse struct {
 	UpdatedAt         time.Time  `json:"updated_at"`
 }
 
-// AlertListDocResponse represents paginated alert list
-// @Description Paginated alert list
-type AlertListDocResponse struct {
-	Alerts     []AlertDocResponse `json:"alerts"`
-	Total      int                `json:"total" example:"50"`
-	Page       int                `json:"page" example:"1"`
-	Limit      int                `json:"limit" example:"10"`
-	TotalPages int                `json:"total_pages" example:"5"`
-}
-
 // AlertHistoryDocResponse represents alert history entry
 // @Description Alert history entry
 type AlertHistoryDocResponse struct {
-	ID             string    `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UUID           string    `json:"uuid" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Action         string    `json:"action" example:"acknowledged"`
 	PreviousStatus string    `json:"previous_status" example:"pending"`
 	NewStatus      string    `json:"new_status" example:"acknowledged"`

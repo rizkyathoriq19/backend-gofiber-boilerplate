@@ -260,6 +260,11 @@ func main() {
 	superAdmin.Get("/roles/:id/permissions", rbacHandler.GetRolePermissions)
 	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
 	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
+	
+	// Batch permission management
+	superAdmin.Post("/roles/:id/permissions/batch", rbacHandler.BatchAssignPermissionsToRole)
+	superAdmin.Delete("/roles/:id/permissions/batch", rbacHandler.BatchRemovePermissionsFromRole)
+	superAdmin.Post("/roles/permissions/batch", rbacHandler.BatchGetRolePermissions)
 
 	// ==================== MEDIPROMPT Protected Routes ====================
 	// All MEDIPROMPT routes require authentication

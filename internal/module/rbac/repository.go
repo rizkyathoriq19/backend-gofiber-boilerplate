@@ -3,6 +3,7 @@ package rbac
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"boilerplate-be/internal/shared/errors"
@@ -309,6 +310,117 @@ func (r *rbacRepository) RemovePermissionFromRole(roleID, permissionID string) e
 		return errors.Wrap(err, errors.DatabaseDeleteFailed)
 	}
 	return nil
+}
+
+func (r *rbacRepository) BatchAssignPermissionsToRole(roleID string, permissionIDs []string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return errors.Wrap(err, errors.TransactionFailed)
+	}
+	defer tx.Rollback()
+
+	query := `INSERT INTO role_permissions (role_id, permission_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer stmt.Close()
+
+	now := time.Now()
+	for _, permissionID := range permissionIDs {
+		if _, err := stmt.Exec(roleID, permissionID, now); err != nil {
+			return errors.Wrap(err, errors.DatabaseInsertFailed)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, errors.TransactionFailed)
+	}
+	return nil
+}
+
+func (r *rbacRepository) BatchRemovePermissionsFromRole(roleID string, permissionIDs []string) error {
+	if len(permissionIDs) == 0 {
+		return nil
+	}
+
+	// Build query with placeholders
+	args := make([]interface{}, len(permissionIDs)+1)
+	args[0] = roleID
+
+	query := `DELETE FROM role_permissions WHERE role_id = $1 AND permission_id IN (`
+	for i, id := range permissionIDs {
+		if i > 0 {
+			query += ", "
+		}
+		query += "$" + strconv.Itoa(i+2)
+		args[i+1] = id
+	}
+	query += ")"
+
+	_, err := r.db.Exec(query, args...)
+	if err != nil {
+		return errors.Wrap(err, errors.DatabaseDeleteFailed)
+	}
+	return nil
+}
+
+func (r *rbacRepository) BatchGetRolePermissions(roleIDs []string) (map[string][]Permission, error) {
+	if len(roleIDs) == 0 {
+		return make(map[string][]Permission), nil
+	}
+
+	// Build query with placeholders - join with roles table to get role name
+	args := make([]interface{}, len(roleIDs))
+	query := `
+		SELECT r.name, p.id, p.name, p.description, p.resource, p.action, p.created_at
+		FROM permissions p
+		INNER JOIN role_permissions rp ON p.id = rp.permission_id
+		INNER JOIN roles r ON r.id = rp.role_id
+		WHERE rp.role_id IN (`
+	for i, id := range roleIDs {
+		if i > 0 {
+			query += ", "
+		}
+		query += "$" + strconv.Itoa(i+1)
+		args[i] = id
+	}
+	query += `) ORDER BY r.name, p.resource, p.action`
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
+	defer rows.Close()
+
+	// First, get role names for initialization
+	roleNames := make(map[string]string) // roleID -> roleName
+	for _, roleID := range roleIDs {
+		role, err := r.GetRoleByID(roleID)
+		if err == nil {
+			roleNames[roleID] = role.Name
+		}
+	}
+
+	result := make(map[string][]Permission)
+	for _, roleID := range roleIDs {
+		if name, ok := roleNames[roleID]; ok {
+			result[name] = []Permission{}
+		}
+	}
+
+	for rows.Next() {
+		var roleName string
+		var permission Permission
+		var description sql.NullString
+		if err := rows.Scan(&roleName, &permission.ID, &permission.Name, &description, &permission.Resource, &permission.Action, &permission.CreatedAt); err != nil {
+			return nil, errors.Wrap(err, errors.DatabaseScanFailed)
+		}
+		permission.Description = description.String
+		result[roleName] = append(result[roleName], permission)
+	}
+
+	return result, nil
 }
 
 // ==================== User Permission Check ====================

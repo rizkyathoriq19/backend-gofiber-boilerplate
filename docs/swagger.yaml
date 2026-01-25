@@ -8,7 +8,7 @@ definitions:
       assigned_staff:
         example: John Nurse
         type: string
-      assigned_staff_id:
+      assigned_staff_uuid:
         type: string
       created_at:
         type: string
@@ -16,32 +16,29 @@ definitions:
         items:
           type: string
         type: array
-      device_id:
+      device_uuid:
         type: string
       escalation_count:
         example: 0
         type: integer
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       message:
         example: Patient requesting assistance
         type: string
-      patient_id:
-        type: string
       patient_name:
         example: Jane Doe
+        type: string
+      patient_uuid:
         type: string
       priority:
         example: high
         type: string
       resolved_at:
         type: string
-      room_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       room_name:
         example: Room 101
+        type: string
+      room_uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       status:
         example: pending
@@ -50,6 +47,9 @@ definitions:
         example: voice_call
         type: string
       updated_at:
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   docs.AlertHistoryDocResponse:
@@ -60,9 +60,6 @@ definitions:
         type: string
       created_at:
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       new_status:
         example: acknowledged
         type: string
@@ -72,26 +69,9 @@ definitions:
       previous_status:
         example: pending
         type: string
-    type: object
-  docs.AlertListDocResponse:
-    description: Paginated alert list
-    properties:
-      alerts:
-        items:
-          $ref: '#/definitions/docs.AlertDocResponse'
-        type: array
-      limit:
-        example: 10
-        type: integer
-      page:
-        example: 1
-        type: integer
-      total:
-        example: 50
-        type: integer
-      total_pages:
-        example: 5
-        type: integer
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.AssignPermissionRequest:
     description: Permission assignment request
@@ -129,6 +109,59 @@ definitions:
       user:
         $ref: '#/definitions/docs.UserResponse'
     type: object
+  docs.BatchAssignPermissionsRequest:
+    description: Batch permission assignment request
+    properties:
+      permission_ids:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 660e8400-e29b-41d4-a716-446655440001
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - permission_ids
+    type: object
+  docs.BatchGetRolePermissionsRequest:
+    description: Batch get role permissions request
+    properties:
+      role_ids:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 660e8400-e29b-41d4-a716-446655440001
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - role_ids
+    type: object
+  docs.BatchRemovePermissionsRequest:
+    description: Batch permission removal request
+    properties:
+      permission_ids:
+        example:
+        - 550e8400-e29b-41d4-a716-446655440000
+        - 660e8400-e29b-41d4-a716-446655440001
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - permission_ids
+    type: object
+  docs.BatchRolePermissionsResponse:
+    description: Batch role permissions response with permissions grouped by role
+      UUID
+    properties:
+      role_permissions:
+        additionalProperties:
+          items:
+            $ref: '#/definitions/docs.PermissionResponse'
+          type: array
+        type: object
+    type: object
   docs.CreateRoleRequest:
     description: Role creation request
     properties:
@@ -152,15 +185,12 @@ definitions:
         type: object
       created_at:
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       last_heartbeat:
         type: string
       name:
         example: Room 101 Microphone
         type: string
-      room_id:
+      room_uuid:
         type: string
       serial_number:
         example: MIC-001
@@ -173,26 +203,9 @@ definitions:
         type: string
       updated_at:
         type: string
-    type: object
-  docs.DeviceListDocResponse:
-    description: Paginated device list
-    properties:
-      devices:
-        items:
-          $ref: '#/definitions/docs.DeviceDocResponse'
-        type: array
-      limit:
-        example: 10
-        type: integer
-      page:
-        example: 1
-        type: integer
-      total:
-        example: 50
-        type: integer
-      total_pages:
-        example: 5
-        type: integer
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.DeviceWithAPIKeyDocResponse:
     description: Device with API key (only on registration)
@@ -205,15 +218,12 @@ definitions:
         type: object
       created_at:
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       last_heartbeat:
         type: string
       name:
         example: Room 101 Microphone
         type: string
-      room_id:
+      room_uuid:
         type: string
       serial_number:
         example: MIC-001
@@ -226,6 +236,9 @@ definitions:
         type: string
       updated_at:
         type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.ErrorResponse:
     description: Standard error response wrapper
@@ -236,6 +249,7 @@ definitions:
       error_code:
         example: -1001
         type: integer
+      errors: {}
       message:
         example: Error occurred
         type: string
@@ -258,6 +272,28 @@ definitions:
     - email
     - password
     type: object
+  docs.MetaResponse:
+    description: Pagination metadata for list responses
+    properties:
+      is_back:
+        example: false
+        type: boolean
+      is_next:
+        example: true
+        type: boolean
+      page:
+        example: 1
+        type: integer
+      page_size:
+        example: 10
+        type: integer
+      total:
+        example: 100
+        type: integer
+      total_page:
+        example: 10
+        type: integer
+    type: object
   docs.PatientDocResponse:
     description: Patient information
     properties:
@@ -276,16 +312,11 @@ definitions:
       gender:
         example: female
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       medical_record_number:
         example: MRN-001
         type: string
       name:
         example: Jane Doe
-        type: string
-      room_id:
         type: string
       room_name:
         example: Room 101
@@ -293,28 +324,13 @@ definitions:
       room_type:
         example: patient_room
         type: string
+      room_uuid:
+        type: string
       updated_at:
         type: string
-    type: object
-  docs.PatientListDocResponse:
-    description: Paginated patient list
-    properties:
-      limit:
-        example: 10
-        type: integer
-      page:
-        example: 1
-        type: integer
-      patients:
-        items:
-          $ref: '#/definitions/docs.PatientDocResponse'
-        type: array
-      total:
-        example: 200
-        type: integer
-      total_pages:
-        example: 20
-        type: integer
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.PermissionResponse:
     description: Permission information
@@ -327,14 +343,14 @@ definitions:
       description:
         example: View users
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       name:
         example: users:read
         type: string
       resource:
         example: users
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   docs.RefreshTokenRequest:
@@ -373,11 +389,11 @@ definitions:
       description:
         example: Full system access
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       name:
         example: superadmin
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   docs.RoomAssignmentDocResponse:
@@ -385,13 +401,13 @@ definitions:
     properties:
       assigned_at:
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       is_primary:
         example: true
         type: boolean
-      room_id:
+      room_uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      uuid:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
@@ -409,9 +425,6 @@ definitions:
       floor:
         example: "1"
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       is_active:
         example: true
         type: boolean
@@ -423,26 +436,9 @@ definitions:
         type: string
       updated_at:
         type: string
-    type: object
-  docs.RoomListDocResponse:
-    description: Paginated room list
-    properties:
-      limit:
-        example: 10
-        type: integer
-      page:
-        example: 1
-        type: integer
-      rooms:
-        items:
-          $ref: '#/definitions/docs.RoomDocResponse'
-        type: array
-      total:
-        example: 100
-        type: integer
-      total_pages:
-        example: 10
-        type: integer
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.StaffDocResponse:
     description: Staff information
@@ -454,9 +450,6 @@ definitions:
         type: string
       employee_id:
         example: EMP-001
-        type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       on_duty:
         example: true
@@ -475,32 +468,15 @@ definitions:
       user_email:
         example: john@hospital.com
         type: string
-      user_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       user_name:
         example: John Doe
         type: string
-    type: object
-  docs.StaffListDocResponse:
-    description: Paginated staff list
-    properties:
-      limit:
-        example: 10
-        type: integer
-      page:
-        example: 1
-        type: integer
-      staff:
-        items:
-          $ref: '#/definitions/docs.StaffDocResponse'
-        type: array
-      total:
-        example: 25
-        type: integer
-      total_pages:
-        example: 3
-        type: integer
+      user_uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   docs.SuccessResponse:
     description: Standard success response wrapper
@@ -512,6 +488,8 @@ definitions:
       message:
         example: Operation successful
         type: string
+      meta:
+        $ref: '#/definitions/docs.MetaResponse'
       status:
         example: true
         type: boolean
@@ -550,9 +528,6 @@ definitions:
       email:
         example: patient@example.com
         type: string
-      id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       name:
         example: John Doe
         type: string
@@ -560,6 +535,9 @@ definitions:
         example: patient
         type: string
       updated_at:
+        type: string
+      uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
   docs.UserRolesResponse:
@@ -569,7 +547,7 @@ definitions:
         items:
           $ref: '#/definitions/docs.RoleResponse'
         type: array
-      user_id:
+      user_uuid:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
@@ -1059,7 +1037,11 @@ paths:
             - $ref: '#/definitions/docs.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/docs.AlertListDocResponse'
+                  items:
+                    $ref: '#/definitions/docs.AlertDocResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.MetaResponse'
               type: object
         "401":
           description: Unauthorized
@@ -1106,15 +1088,15 @@ paths:
       summary: Create a new alert
       tags:
       - Alerts
-  /alerts/{id}:
+  /alerts/{uuid}:
     get:
       consumes:
       - application/json
       description: Returns an alert by ID
       parameters:
-      - description: Alert ID
+      - description: Alert UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1142,15 +1124,15 @@ paths:
       summary: Get an alert by ID
       tags:
       - Alerts
-  /alerts/{id}/acknowledge:
+  /alerts/{uuid}/acknowledge:
     post:
       consumes:
       - application/json
       description: Acknowledges an alert as a staff member
       parameters:
-      - description: Alert ID
+      - description: Alert UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1159,7 +1141,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1177,15 +1159,15 @@ paths:
       summary: Acknowledge an alert
       tags:
       - Alerts
-  /alerts/{id}/history:
+  /alerts/{uuid}/history:
     get:
       consumes:
       - application/json
       description: Returns the history of an alert
       parameters:
-      - description: Alert ID
+      - description: Alert UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1215,15 +1197,15 @@ paths:
       summary: Get alert history
       tags:
       - Alerts
-  /alerts/{id}/resolve:
+  /alerts/{uuid}/resolve:
     post:
       consumes:
       - application/json
       description: Resolves an alert
       parameters:
-      - description: Alert ID
+      - description: Alert UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Resolution notes
@@ -1238,7 +1220,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1568,7 +1550,11 @@ paths:
             - $ref: '#/definitions/docs.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/docs.DeviceListDocResponse'
+                  items:
+                    $ref: '#/definitions/docs.DeviceDocResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.MetaResponse'
               type: object
         "401":
           description: Unauthorized
@@ -1620,15 +1606,15 @@ paths:
       summary: Register a new device
       tags:
       - Devices
-  /devices/{id}:
+  /devices/{uuid}:
     delete:
       consumes:
       - application/json
       description: Deletes a device by ID
       parameters:
-      - description: Device ID
+      - description: Device UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1637,7 +1623,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1660,9 +1646,9 @@ paths:
       - application/json
       description: Returns a device by its ID
       parameters:
-      - description: Device ID
+      - description: Device UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1695,9 +1681,9 @@ paths:
       - application/json
       description: Updates a device by ID
       parameters:
-      - description: Device ID
+      - description: Device UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Device update data
@@ -1735,15 +1721,15 @@ paths:
       summary: Update a device
       tags:
       - Devices
-  /devices/{id}/status:
+  /devices/{uuid}/status:
     put:
       consumes:
       - application/json
       description: Updates a device status (online, offline, maintenance, error)
       parameters:
-      - description: Device ID
+      - description: Device UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Status update
@@ -1758,7 +1744,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "400":
           description: Bad Request
           schema:
@@ -1873,13 +1859,13 @@ paths:
       summary: Send a message
       tags:
       - Messages
-  /messages/{id}:
+  /messages/{uuid}:
     delete:
-      description: Deletes a message by ID
+      description: Deletes a message by UUID
       parameters:
-      - description: Message ID
+      - description: Message UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1903,11 +1889,11 @@ paths:
       tags:
       - Messages
     get:
-      description: Gets a message by ID
+      description: Gets a message by UUID
       parameters:
-      - description: Message ID
+      - description: Message UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -1930,13 +1916,13 @@ paths:
       summary: Get a message
       tags:
       - Messages
-  /messages/{id}/read:
+  /messages/{uuid}/read:
     put:
       description: Marks a message as read
       parameters:
-      - description: Message ID
+      - description: Message UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2073,7 +2059,11 @@ paths:
             - $ref: '#/definitions/docs.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/docs.PatientListDocResponse'
+                  items:
+                    $ref: '#/definitions/docs.PatientDocResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.MetaResponse'
               type: object
         "401":
           description: Unauthorized
@@ -2120,15 +2110,15 @@ paths:
       summary: Admit a new patient
       tags:
       - Patients
-  /patients/{id}:
+  /patients/{uuid}:
     delete:
       consumes:
       - application/json
       description: Deletes a patient by ID
       parameters:
-      - description: Patient ID
+      - description: Patient UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2137,7 +2127,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2160,9 +2150,9 @@ paths:
       - application/json
       description: Returns a patient by ID
       parameters:
-      - description: Patient ID
+      - description: Patient UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2195,9 +2185,9 @@ paths:
       - application/json
       description: Updates a patient by ID
       parameters:
-      - description: Patient ID
+      - description: Patient UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Patient update data
@@ -2235,15 +2225,15 @@ paths:
       summary: Update a patient
       tags:
       - Patients
-  /patients/{id}/condition:
+  /patients/{uuid}/condition:
     put:
       consumes:
       - application/json
       description: Updates a patient's condition level
       parameters:
-      - description: Patient ID
+      - description: Patient UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Condition update data
@@ -2258,7 +2248,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "400":
           description: Bad Request
           schema:
@@ -2276,15 +2266,15 @@ paths:
       summary: Update patient condition level
       tags:
       - Patients
-  /patients/{id}/discharge:
+  /patients/{uuid}/discharge:
     post:
       consumes:
       - application/json
       description: Discharges a patient from the hospital
       parameters:
-      - description: Patient ID
+      - description: Patient UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2293,7 +2283,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2349,7 +2339,11 @@ paths:
             - $ref: '#/definitions/docs.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/docs.RoomListDocResponse'
+                  items:
+                    $ref: '#/definitions/docs.RoomDocResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.MetaResponse'
               type: object
         "401":
           description: Unauthorized
@@ -2400,15 +2394,15 @@ paths:
       summary: Create a new room
       tags:
       - Rooms
-  /rooms/{id}:
+  /rooms/{uuid}:
     delete:
       consumes:
       - application/json
       description: Deletes a room by ID
       parameters:
-      - description: Room ID
+      - description: Room UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2440,9 +2434,9 @@ paths:
       - application/json
       description: Returns a room by its ID
       parameters:
-      - description: Room ID
+      - description: Room UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2475,9 +2469,9 @@ paths:
       - application/json
       description: Updates a room by ID
       parameters:
-      - description: Room ID
+      - description: Room UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Room update data
@@ -2561,7 +2555,11 @@ paths:
             - $ref: '#/definitions/docs.SuccessResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/docs.StaffListDocResponse'
+                  items:
+                    $ref: '#/definitions/docs.StaffDocResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/docs.MetaResponse'
               type: object
         "401":
           description: Unauthorized
@@ -2612,15 +2610,15 @@ paths:
       summary: Create a new staff member
       tags:
       - Staff
-  /staff/{id}:
+  /staff/{uuid}:
     delete:
       consumes:
       - application/json
       description: Deletes a staff member by ID
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2629,7 +2627,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2652,9 +2650,9 @@ paths:
       - application/json
       description: Returns a staff member by ID
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2687,9 +2685,9 @@ paths:
       - application/json
       description: Updates a staff member by ID
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Staff update data
@@ -2727,15 +2725,15 @@ paths:
       summary: Update a staff member
       tags:
       - Staff
-  /staff/{id}/rooms:
+  /staff/{uuid}/rooms:
     get:
       consumes:
       - application/json
       description: Returns all room assignments for a staff member
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2770,9 +2768,9 @@ paths:
       - application/json
       description: Assigns a staff member to a room
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Room assignment data
@@ -2787,7 +2785,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "400":
           description: Bad Request
           schema:
@@ -2805,18 +2803,18 @@ paths:
       summary: Assign staff to room
       tags:
       - Staff
-  /staff/{id}/rooms/{roomId}:
+  /staff/{uuid}/rooms/{roomId}:
     delete:
       consumes:
       - application/json
       description: Removes a staff member from a room assignment
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
-      - description: Room ID
+      - description: Room UUID
         in: path
         name: roomId
         required: true
@@ -2827,7 +2825,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -2841,15 +2839,15 @@ paths:
       summary: Remove staff from room
       tags:
       - Staff
-  /staff/{id}/shift:
+  /staff/{uuid}/shift:
     put:
       consumes:
       - application/json
       description: Updates a staff member's shift
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Shift update data
@@ -2864,7 +2862,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "400":
           description: Bad Request
           schema:
@@ -2882,15 +2880,15 @@ paths:
       summary: Update staff shift
       tags:
       - Staff
-  /staff/{id}/toggle-duty:
+  /staff/{uuid}/toggle-duty:
     post:
       consumes:
       - application/json
       description: Toggles the on-duty status of a staff member
       parameters:
-      - description: Staff ID
+      - description: Staff UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -2899,7 +2897,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/docs.ErrorResponse'
+            $ref: '#/definitions/docs.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
@@ -3054,15 +3052,15 @@ paths:
       summary: Create a new role
       tags:
       - Super Admin
-  /super-admin/roles/{id}:
+  /super-admin/roles/{uuid}:
     delete:
       consumes:
       - application/json
       description: Deletes a role (Super Admin only, cannot delete system roles)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -3094,9 +3092,9 @@ paths:
       - application/json
       description: Returns a role with its assigned permissions (Super Admin only)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -3133,9 +3131,9 @@ paths:
       - application/json
       description: Updates an existing role (Super Admin only)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Role update data
@@ -3177,15 +3175,15 @@ paths:
       summary: Update a role
       tags:
       - Super Admin
-  /super-admin/roles/{id}/permissions:
+  /super-admin/roles/{uuid}/permissions:
     get:
       consumes:
       - application/json
       description: Returns all permissions assigned to a role (Super Admin only)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       produces:
@@ -3224,9 +3222,9 @@ paths:
       - application/json
       description: Assigns a permission to a role (Super Admin only)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
       - description: Permission assignment
@@ -3263,18 +3261,18 @@ paths:
       summary: Assign permission to role
       tags:
       - Super Admin
-  /super-admin/roles/{id}/permissions/{permissionId}:
+  /super-admin/roles/{uuid}/permissions/{permissionId}:
     delete:
       consumes:
       - application/json
       description: Removes a permission from a role (Super Admin only)
       parameters:
-      - description: Role ID
+      - description: Role UUID
         in: path
-        name: id
+        name: uuid
         required: true
         type: string
-      - description: Permission ID
+      - description: Permission UUID
         in: path
         name: permissionId
         required: true
@@ -3303,13 +3301,147 @@ paths:
       summary: Remove permission from role
       tags:
       - Super Admin
+  /super-admin/roles/{uuid}/permissions/batch:
+    delete:
+      consumes:
+      - application/json
+      description: Removes multiple permissions from a role at once (Super Admin only)
+      parameters:
+      - description: Role UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Permission IDs to remove
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.BatchRemovePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Batch remove permissions from role
+      tags:
+      - Super Admin
+    post:
+      consumes:
+      - application/json
+      description: Assigns multiple permissions to a role at once (Super Admin only)
+      parameters:
+      - description: Role UUID
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Permission IDs to assign
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.BatchAssignPermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/docs.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Batch assign permissions to role
+      tags:
+      - Super Admin
+  /super-admin/roles/permissions/batch:
+    post:
+      consumes:
+      - application/json
+      description: Returns permissions for multiple roles at once (Super Admin only)
+      parameters:
+      - description: Role IDs to get permissions for
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/docs.BatchGetRolePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/docs.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/docs.BatchRolePermissionsResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/docs.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Batch get permissions by roles
+      tags:
+      - Super Admin
   /super-admin/users/{userId}/roles:
     get:
       consumes:
       - application/json
       description: Returns all roles assigned to a user (Super Admin only)
       parameters:
-      - description: User ID
+      - description: User UUID
         in: path
         name: userId
         required: true
@@ -3344,7 +3476,7 @@ paths:
       - application/json
       description: Assigns a role to a user (Super Admin only)
       parameters:
-      - description: User ID
+      - description: User UUID
         in: path
         name: userId
         required: true
@@ -3389,12 +3521,12 @@ paths:
       - application/json
       description: Removes a role from a user (Super Admin only)
       parameters:
-      - description: User ID
+      - description: User UUID
         in: path
         name: userId
         required: true
         type: string
-      - description: Role ID
+      - description: Role UUID
         in: path
         name: roleId
         required: true

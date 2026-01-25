@@ -64,11 +64,11 @@ func (h *AlertHandler) CreateAlert(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Alert ID"
-// @Success      200  {object}  docs.SuccessResponse{data=docs.AlertDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /alerts/{id} [get]
+// @Param        uuid  path      string  true  "Alert UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=docs.AlertDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /alerts/{uuid} [get]
 func (h *AlertHandler) GetAlert(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -100,7 +100,7 @@ func (h *AlertHandler) GetAlert(c *fiber.Ctx) error {
 // @Param        status     query     string  false  "Status filter"
 // @Param        page       query     int     false  "Page number" default(1)
 // @Param        limit      query     int     false  "Items per page" default(10)
-// @Success      200        {object}  docs.SuccessResponse{data=docs.AlertListDocResponse}
+// @Success      200        {object}  docs.SuccessResponse{data=[]docs.AlertDocResponse,meta=docs.MetaResponse}
 // @Failure      401        {object}  docs.ErrorResponse
 // @Router       /alerts [get]
 func (h *AlertHandler) GetAlerts(c *fiber.Ctx) error {
@@ -128,21 +128,22 @@ func (h *AlertHandler) GetAlerts(c *fiber.Ctx) error {
 		alertResponses = append(alertResponses, alert.ToResponse())
 	}
 
-	totalPages := total / filter.Limit
+	totalPages := int64(total / filter.Limit)
 	if total%filter.Limit > 0 {
 		totalPages++
 	}
 
-	listResponse := AlertListResponse{
-		Alerts:     alertResponses,
-		Total:      total,
-		Page:       filter.Page,
-		Limit:      filter.Limit,
-		TotalPages: totalPages,
+	meta := &response.MetaResponse{
+		Page:      int64(filter.Page),
+		PageSize:  int64(filter.Limit),
+		Total:     int64(total),
+		TotalPage: totalPages,
+		IsNext:    int64(filter.Page) < totalPages,
+		IsBack:    filter.Page > 1,
 	}
 
-	return c.JSON(response.CreateSuccessResponse(
-		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, listResponse,
+	return c.JSON(response.CreatePaginatedResponse(
+		c, response.MsgDataRetrieved.ID, response.MsgDataRetrieved.EN, alertResponses, meta,
 	))
 }
 
@@ -183,12 +184,12 @@ func (h *AlertHandler) GetActiveAlerts(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Alert ID"
-// @Success      200  {object}  docs.ErrorResponse
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      403  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /alerts/{id}/acknowledge [post]
+// @Param        uuid  path      string  true  "Alert UUID"
+// @Success      200   {object}  docs.SuccessResponse
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      403   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /alerts/{uuid}/acknowledge [post]
 func (h *AlertHandler) AcknowledgeAlert(c *fiber.Ctx) error {
 	id := c.Params("id")
 	staffID := c.Locals("staff_id")
@@ -233,13 +234,13 @@ func (h *AlertHandler) AcknowledgeAlert(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id    path      string              true  "Alert ID"
+// @Param        uuid  path      string              true  "Alert UUID"
 // @Param        body  body      ResolveAlertRequest true  "Resolution notes"
-// @Success      200   {object}  docs.ErrorResponse
+// @Success      200   {object}  docs.SuccessResponse
 // @Failure      401   {object}  docs.ErrorResponse
 // @Failure      403   {object}  docs.ErrorResponse
 // @Failure      404   {object}  docs.ErrorResponse
-// @Router       /alerts/{id}/resolve [post]
+// @Router       /alerts/{uuid}/resolve [post]
 func (h *AlertHandler) ResolveAlert(c *fiber.Ctx) error {
 	id := c.Params("id")
 	staffID := c.Locals("staff_id")
@@ -289,11 +290,11 @@ func (h *AlertHandler) ResolveAlert(c *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id   path      string  true  "Alert ID"
-// @Success      200  {object}  docs.SuccessResponse{data=[]docs.AlertHistoryDocResponse}
-// @Failure      401  {object}  docs.ErrorResponse
-// @Failure      404  {object}  docs.ErrorResponse
-// @Router       /alerts/{id}/history [get]
+// @Param        uuid  path      string  true  "Alert UUID"
+// @Success      200   {object}  docs.SuccessResponse{data=[]docs.AlertHistoryDocResponse}
+// @Failure      401   {object}  docs.ErrorResponse
+// @Failure      404   {object}  docs.ErrorResponse
+// @Router       /alerts/{uuid}/history [get]
 func (h *AlertHandler) GetAlertHistory(c *fiber.Ctx) error {
 	id := c.Params("id")
 

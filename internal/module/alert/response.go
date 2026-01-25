@@ -6,12 +6,12 @@ import (
 
 // AlertResponse represents the alert response
 type AlertResponse struct {
-	ID                       string        `json:"id"`
-	RoomID                   string        `json:"room_id"`
-	PatientID                *string       `json:"patient_id"`
-	DeviceID                 *string       `json:"device_id"`
-	AssignedStaffID          *string       `json:"assigned_staff_id"`
-	ResolvedByStaffID        *string       `json:"resolved_by_staff_id"`
+	ID                       string        `json:"uuid"`
+	RoomID                   string        `json:"room_uuid"`
+	PatientID                *string       `json:"patient_uuid"`
+	DeviceID                 *string       `json:"device_uuid"`
+	AssignedStaffID          *string       `json:"assigned_staff_uuid"`
+	ResolvedByStaffID        *string       `json:"resolved_by_staff_uuid"`
 	Type                     AlertType     `json:"type"`
 	Priority                 AlertPriority `json:"priority"`
 	Status                   AlertStatus   `json:"status"`
@@ -44,7 +44,7 @@ type AlertListResponse struct {
 
 // AlertHistoryResponse represents a history entry
 type AlertHistoryResponse struct {
-	ID             string      `json:"id"`
+	ID             string      `json:"uuid"`
 	Action         string      `json:"action"`
 	PreviousStatus AlertStatus `json:"previous_status"`
 	NewStatus      AlertStatus `json:"new_status"`
