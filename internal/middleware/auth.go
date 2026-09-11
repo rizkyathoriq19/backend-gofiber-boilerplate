@@ -1,11 +1,9 @@
 package middleware
 
 import (
-	"context"
+	stderrors "errors"
 	"strings"
-	"time"
 
-	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/shared/errors"
 	"boilerplate-be/internal/shared/response"
 	"boilerplate-be/internal/shared/security"
@@ -13,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func AuthMiddleware(jwtManager *security.JWTManager, redisClient *database.RedisClient) fiber.Handler {
+func AuthMiddleware(sessionManager *security.LoginSessionManager) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// Get authorization header
 		authHeader := c.Get("Authorization")
@@ -33,26 +31,12 @@ func AuthMiddleware(jwtManager *security.JWTManager, redisClient *database.Redis
 		}
 
 		// Validate token
-		claims, err := jwtManager.ValidateToken(tokenString)
+		claims, err := sessionManager.ValidateAccess(tokenString)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
-		}
-
-		// Check if token is access token
-		if claims.TokenType != "access" {
-			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
-		}
-
-		// Check if token is blacklisted
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		isBlacklisted, err := jwtManager.IsTokenBlacklisted(ctx, redisClient, claims.ID)
-		if err != nil {
-			// Log Redis error - in production, consider failing closed instead of open
-			// For now, we allow the request to proceed if Redis is unavailable
-			// This is a tradeoff between availability and security
-		} else if isBlacklisted {
+			if stderrors.Is(err, security.ErrSessionStoreUnavailable) {
+				appErr := errors.New(errors.AuthServiceUnavailable)
+				return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
+			}
 			return c.Status(fiber.StatusUnauthorized).JSON(response.CreateErrorResponse(c, errors.New(errors.InvalidToken)))
 		}
 
@@ -61,6 +45,7 @@ func AuthMiddleware(jwtManager *security.JWTManager, redisClient *database.Redis
 		c.Locals("user_email", claims.Email)
 		c.Locals("user_role", claims.Role)
 		c.Locals("token_id", claims.ID)
+		c.Locals("session_id", claims.SessionID)
 
 		return c.Next()
 	}

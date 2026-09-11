@@ -7,59 +7,10 @@ import (
 	"boilerplate-be/internal/shared/enum"
 )
 
-func TestJWTManager_GenerateToken(t *testing.T) {
-	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour)
-
-	tests := []struct {
-		name    string
-		userID  string
-		email   string
-		role    enum.UserRole
-		wantErr bool
-	}{
-		{
-			name:    "Generate valid token",
-			userID:  "user-123",
-			email:   "test@example.com",
-			role:    enum.UserRoleUser,
-			wantErr: false,
-		},
-		{
-			name:    "Generate token with admin role",
-			userID:  "admin-123",
-			email:   "admin@example.com",
-			role:    enum.UserRoleAdmin,
-			wantErr: false,
-		},
-		{
-			name:    "Empty user ID",
-			userID:  "",
-			email:   "test@example.com",
-			role:    enum.UserRoleUser,
-			wantErr: false, // JWT allows empty claims
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			token, err := jwtManager.GenerateToken(tt.userID, tt.email, tt.role)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GenerateToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !tt.wantErr && token == "" {
-				t.Error("GenerateToken() returned empty token")
-			}
-		})
-	}
-}
-
 func TestJWTManager_GenerateTokenPair(t *testing.T) {
-	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour)
+	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour, 168*time.Hour)
 
-	accessToken, refreshToken, err := jwtManager.GenerateTokenPair("user-123", "test@example.com", enum.UserRoleUser)
+	accessToken, refreshToken, err := jwtManager.generateTokenPair("user-123", "test@example.com", enum.UserRoleUser, "session-1")
 
 	if err != nil {
 		t.Fatalf("GenerateTokenPair() error = %v", err)
@@ -79,10 +30,10 @@ func TestJWTManager_GenerateTokenPair(t *testing.T) {
 }
 
 func TestJWTManager_ValidateToken(t *testing.T) {
-	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour)
+	jwtManager := NewJWTManager("test-secret-key-for-testing-purposes", 24*time.Hour, 168*time.Hour)
 
 	// Generate a valid token first
-	validToken, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleUser)
+	validToken, _, err := jwtManager.generateTokenPair("user-123", "test@example.com", enum.UserRoleUser, "session-1")
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}
@@ -136,9 +87,9 @@ func TestJWTManager_ValidateToken(t *testing.T) {
 
 func TestJWTManager_TokenExpiry(t *testing.T) {
 	// Create JWT manager with very short expiry
-	jwtManager := NewJWTManager("test-secret", 1*time.Millisecond)
+	jwtManager := NewJWTManager("test-secret", 1*time.Millisecond, time.Hour)
 
-	token, err := jwtManager.GenerateToken("user-123", "test@example.com", enum.UserRoleUser)
+	token, _, err := jwtManager.generateTokenPair("user-123", "test@example.com", enum.UserRoleUser, "session-1")
 	if err != nil {
 		t.Fatalf("Failed to generate token: %v", err)
 	}

@@ -70,25 +70,23 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	// Initialize token manager
-	tokenManager := security.NewTokenManager(redisClient)
-
 	// Initialize cache
 	cacheHelper := utils.NewCacheHelper(redisClient, cfg.Redis.DefaultTTL)
 
 	// Initialize JWT manager
-	jwtManager := security.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry)
+	jwtManager := security.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Expiry, cfg.JWT.RefreshExpiry)
+	sessionManager := security.NewLoginSessionManager(jwtManager, security.NewRedisSessionStore(redisClient))
 
 	// ==================== Initialize Repositories ====================
 	authRepo := auth.NewAuthRepository(db, cacheHelper)
 	rbacRepo := rbac.NewRBACRepository(db, cacheHelper)
 
 	// ==================== Initialize Use Cases ====================
-	authUseCase := auth.NewAuthUseCase(authRepo, jwtManager, tokenManager)
+	authUseCase := auth.NewAuthUseCase(authRepo, sessionManager)
 	rbacUseCase := rbac.NewRBACUseCase(rbacRepo)
 
 	// ==================== Initialize Handlers ====================
-	authHandler := auth.NewAuthHandler(authUseCase)
+	authHandler := auth.NewAuthHandler(authUseCase, cfg.JWT.Expiry)
 	rbacHandler := rbac.NewRBACHandler(rbacUseCase)
 
 	// ==================== Initialize WebSocket ====================
@@ -147,7 +145,7 @@ func main() {
 
 	// ==================== Protected Routes (Authenticated Users) ====================
 	// Auth routes (protected)
-	authProtected := authGroup.Group("", middleware.AuthMiddleware(jwtManager, redisClient))
+	authProtected := authGroup.Group("", middleware.AuthMiddleware(sessionManager))
 	authProtected.Post("/logout", authHandler.Logout)
 	authProtected.Get("/profile", authHandler.Profile)
 	authProtected.Put("/profile", authHandler.UpdateProfile)
@@ -157,7 +155,7 @@ func main() {
 	// ==================== Super Admin Routes ====================
 	// Super admin routes (requires super_admin role)
 	superAdmin := api.Group("/super-admin",
-		middleware.AuthMiddleware(jwtManager, redisClient),
+		middleware.AuthMiddleware(sessionManager),
 		middleware.IsSuperAdmin(rbacUseCase),
 	)
 
@@ -178,7 +176,6 @@ func main() {
 	superAdmin.Get("/roles/:id/permissions", rbacHandler.GetRolePermissions)
 	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
 	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
-
 
 	// Health check - HTML UI
 	api.Get("/health", func(c *fiber.Ctx) error {

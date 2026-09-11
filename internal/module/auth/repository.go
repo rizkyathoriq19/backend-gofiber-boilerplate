@@ -75,7 +75,7 @@ func (r *authRepository) GetUserByEmail(email string) (*User, error) {
 func (r *authRepository) GetUserByID(id string) (*User, error) {
 	cacheKey := r.cacheHelper.BuildUserCacheKey(id, "profile")
 
-	cachedData, err := r.cacheHelper.GetOrSet(context.Background(), cacheKey, func() (interface{}, error) {
+	user, err := utils.GetOrSetTyped(r.cacheHelper, context.Background(), cacheKey, func() (*User, error) {
 		dbUser := &User{}
 		query := `
 			SELECT id, name, email, password, role, created_at, updated_at
@@ -97,12 +97,6 @@ func (r *authRepository) GetUserByID(id string) (*User, error) {
 
 	if err != nil {
 		return nil, err
-	}
-
-	user, ok := cachedData.(*User)
-	if !ok {
-		
-		return nil, errors.New(errors.InternalServerError)
 	}
 
 	return user, nil

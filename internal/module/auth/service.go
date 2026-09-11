@@ -1,25 +1,25 @@
 package auth
 
 import (
+	stderrors "errors"
+
+	"boilerplate-be/internal/shared/enum"
 	"boilerplate-be/internal/shared/errors"
 	"boilerplate-be/internal/shared/security"
 )
 
 type authUseCase struct {
-	authRepo     AuthRepository
-	jwtManager   *security.JWTManager
-	tokenManager *security.TokenManager
+	authRepo       AuthRepository
+	sessionManager *security.LoginSessionManager
 }
 
 func NewAuthUseCase(
 	authRepo AuthRepository,
-	jwtManager *security.JWTManager,
-	tokenManager *security.TokenManager,
+	sessionManager *security.LoginSessionManager,
 ) *authUseCase {
 	return &authUseCase{
-		authRepo:     authRepo,
-		jwtManager:   jwtManager,
-		tokenManager: tokenManager,
+		authRepo:       authRepo,
+		sessionManager: sessionManager,
 	}
 }
 
@@ -44,21 +44,12 @@ func (u *authUseCase) Register(email, password, name string) (*User, string, str
 		return nil, "", "", err
 	}
 
-	accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
+	pair, err := u.sessionManager.Issue(user.ID, user.Email, user.Role)
 	if err != nil {
-		return nil, "", "", errors.Wrap(err, errors.TokenGenerationFailed)
+		return nil, "", "", sessionAppError(err, errors.TokenGenerationFailed)
 	}
 
-	refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
-	if err != nil {
-		return nil, "", "", errors.Wrap(err, errors.TokenGenerationFailed)
-	}
-
-	if err := u.tokenManager.StoreToken(user.ID, refreshClaims.ID); err != nil {
-		return nil, "", "", errors.Wrap(err, errors.CacheStoreFailed)
-	}
-
-	return user, accessToken, refreshToken, nil
+	return user, pair.AccessToken, pair.RefreshToken, nil
 }
 
 func (u *authUseCase) Login(email, password string) (string, string, error) {
@@ -71,39 +62,18 @@ func (u *authUseCase) Login(email, password string) (string, string, error) {
 		return "", "", errors.New(errors.PasswordMismatch)
 	}
 
-	accessToken, refreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
+	pair, err := u.sessionManager.Issue(user.ID, user.Email, user.Role)
 	if err != nil {
-		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
+		return "", "", sessionAppError(err, errors.TokenGenerationFailed)
 	}
 
-	refreshClaims, err := u.jwtManager.ValidateToken(refreshToken)
-	if err != nil {
-		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
-	}
-
-	if err := u.tokenManager.StoreToken(user.ID, refreshClaims.ID); err != nil {
-		return "", "", errors.Wrap(err, errors.CacheStoreFailed)
-	}
-
-	return accessToken, refreshToken, nil
+	return pair.AccessToken, pair.RefreshToken, nil
 }
 
 func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, error) {
-	claims, err := u.jwtManager.ValidateToken(refreshTokenString)
+	claims, err := u.sessionManager.ValidateRefresh(refreshTokenString)
 	if err != nil {
-		return "", "", errors.New(errors.InvalidToken)
-	}
-
-	if claims.TokenType != "refresh" {
-		return "", "", errors.New(errors.InvalidToken)
-	}
-
-	exists, err := u.tokenManager.ValidateToken(claims.UserID, claims.ID)
-	if err != nil {
-		return "", "", errors.Wrap(err, errors.CacheError)
-	}
-	if !exists {
-		return "", "", errors.New(errors.InvalidToken)
+		return "", "", sessionAppError(err, errors.InvalidToken)
 	}
 
 	user, err := u.authRepo.GetUserByID(claims.UserID)
@@ -111,36 +81,18 @@ func (u *authUseCase) RefreshToken(refreshTokenString string) (string, string, e
 		return "", "", errors.Wrap(err, errors.AccountNotFound)
 	}
 
-	newAccessToken, newRefreshToken, err := u.jwtManager.GenerateTokenPair(user.ID, user.Email, user.Role)
+	pair, err := u.sessionManager.Renew(refreshTokenString, user.ID, user.Email, user.Role)
 	if err != nil {
-		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
+		return "", "", sessionAppError(err, errors.TokenGenerationFailed)
 	}
 
-	if err := u.tokenManager.RevokeToken(claims.UserID, claims.ID); err != nil {
-		return "", "", errors.Wrap(err, errors.CacheError)
-	}
-
-	newRefreshClaims, err := u.jwtManager.ValidateToken(newRefreshToken)
-	if err != nil {
-		return "", "", errors.Wrap(err, errors.TokenGenerationFailed)
-	}
-
-	if err := u.tokenManager.StoreToken(user.ID, newRefreshClaims.ID); err != nil {
-		return "", "", errors.Wrap(err, errors.CacheStoreFailed)
-	}
-
-	return newAccessToken, newRefreshToken, nil
+	return pair.AccessToken, pair.RefreshToken, nil
 }
 
-func (u *authUseCase) Logout(userID, tokenID string) error {
-	if err := u.tokenManager.BlacklistToken(userID, tokenID); err != nil {
-		return errors.Wrap(err, errors.CacheError)
+func (u *authUseCase) Logout(sessionID string) error {
+	if err := u.sessionManager.Logout(sessionID); err != nil {
+		return sessionAppError(err, errors.CacheError)
 	}
-
-	if err := u.tokenManager.RevokeAllUserTokens(userID); err != nil {
-		return errors.Wrap(err, errors.CacheError)
-	}
-
 	return nil
 }
 
@@ -161,4 +113,14 @@ func (u *authUseCase) UpdateProfile(userID, name string) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func sessionAppError(err error, fallback enum.ErrorCode) error {
+	if stderrors.Is(err, security.ErrSessionStoreUnavailable) {
+		return errors.New(errors.AuthServiceUnavailable)
+	}
+	if stderrors.Is(err, security.ErrInvalidSession) {
+		return errors.New(errors.InvalidToken)
+	}
+	return errors.Wrap(err, fallback)
 }

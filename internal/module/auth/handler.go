@@ -11,12 +11,14 @@ import (
 )
 
 type AuthHandler struct {
-	authUseCase AuthUseCase
+	authUseCase  AuthUseCase
+	accessExpiry time.Duration
 }
 
-func NewAuthHandler(authUseCase AuthUseCase) *AuthHandler {
+func NewAuthHandler(authUseCase AuthUseCase, accessExpiry time.Duration) *AuthHandler {
 	return &AuthHandler{
-		authUseCase: authUseCase,
+		authUseCase:  authUseCase,
+		accessExpiry: accessExpiry,
 	}
 }
 
@@ -65,7 +67,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(24 * time.Hour / time.Second),
+		ExpiresIn:    int64(h.accessExpiry / time.Second),
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(response.CreateSuccessResponse(
@@ -111,7 +113,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(24 * time.Hour / time.Second),
+		ExpiresIn:    int64(h.accessExpiry / time.Second),
 	}
 
 	return c.JSON(response.CreateSuccessResponse(
@@ -157,7 +159,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(24 * time.Hour / time.Second),
+		ExpiresIn:    int64(h.accessExpiry / time.Second),
 	}
 
 	return c.JSON(response.CreateSuccessResponse(
@@ -176,10 +178,9 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 // @Failure      401  {object}  docs.ErrorResponse
 // @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(string)
-	tokenID := c.Locals("token_id").(string)
+	sessionID := c.Locals("session_id").(string)
 
-	if err := h.authUseCase.Logout(userID, tokenID); err != nil {
+	if err := h.authUseCase.Logout(sessionID); err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return c.Status(appErr.StatusCode).JSON(response.CreateErrorResponse(c, appErr))
 		}

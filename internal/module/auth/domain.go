@@ -11,7 +11,7 @@ type AuthUseCase interface {
 	Register(email, password, name string) (*User, string, string, error)
 	Login(email, password string) (string, string, error)
 	RefreshToken(refreshToken string) (string, string, error)
-	Logout(userID, tokenID string) error
+	Logout(sessionID string) error
 	GetProfile(userID string) (*User, error)
 	UpdateProfile(userID, name string) (*User, error)
 }

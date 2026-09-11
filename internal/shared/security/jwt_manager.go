@@ -1,11 +1,8 @@
 package security
 
 import (
-	"context"
-	"fmt"
 	"time"
 
-	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/shared/enum"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -23,30 +20,27 @@ type Claims struct {
 	Email     string        `json:"email"`
 	Role      enum.UserRole `json:"role"`
 	TokenType string        `json:"token_type"` // "access" or "refresh"
+	SessionID string        `json:"session_id"`
 	jwt.RegisteredClaims
 }
 
-func NewJWTManager(secretKey string, expiry time.Duration) *JWTManager {
+func NewJWTManager(secretKey string, expiry, refreshExpiry time.Duration) *JWTManager {
 	return &JWTManager{
 		secretKey:     secretKey,
 		expiry:        expiry,
-		refreshExpiry: 168 * time.Hour, // 7 days default
+		refreshExpiry: refreshExpiry,
 	}
 }
 
-func (j *JWTManager) SetRefreshExpiry(expiry time.Duration) {
-	j.refreshExpiry = expiry
-}
-
-func (j *JWTManager) GenerateTokenPair(userID string, email string, role enum.UserRole) (string, string, error) {
+func (j *JWTManager) generateTokenPair(userID string, email string, role enum.UserRole, sessionID string) (string, string, error) {
 	// Generate access token
-	accessToken, err := j.generateToken(userID, email, role, "access", j.expiry)
+	accessToken, err := j.generateToken(userID, email, role, "access", sessionID, j.expiry)
 	if err != nil {
 		return "", "", err
 	}
 
 	// Generate refresh token
-	refreshToken, err := j.generateToken(userID, email, role, "refresh", j.refreshExpiry)
+	refreshToken, err := j.generateToken(userID, email, role, "refresh", sessionID, j.refreshExpiry)
 	if err != nil {
 		return "", "", err
 	}
@@ -54,16 +48,13 @@ func (j *JWTManager) GenerateTokenPair(userID string, email string, role enum.Us
 	return accessToken, refreshToken, nil
 }
 
-func (j *JWTManager) GenerateToken(userID string, email string, role enum.UserRole) (string, error) {
-	return j.generateToken(userID, email, role, "access", j.expiry)
-}
-
-func (j *JWTManager) generateToken(userID string, email string, role enum.UserRole, tokenType string, expiry time.Duration) (string, error) {
+func (j *JWTManager) generateToken(userID string, email string, role enum.UserRole, tokenType, sessionID string, expiry time.Duration) (string, error) {
 	claims := &Claims{
 		UserID:    userID,
 		Email:     email,
 		Role:      role,
 		TokenType: tokenType,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -92,14 +83,4 @@ func (j *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	return claims, nil
-}
-
-func (j *JWTManager) BlacklistToken(ctx context.Context, redisClient *database.RedisClient, tokenID string, expiry time.Duration) error {
-	key := fmt.Sprintf("blacklist:%s", tokenID)
-	return redisClient.SetWithTTL(ctx, key, "1", expiry)
-}
-
-func (j *JWTManager) IsTokenBlacklisted(ctx context.Context, redisClient *database.RedisClient, tokenID string) (bool, error) {
-	key := fmt.Sprintf("blacklist:%s", tokenID)
-	return redisClient.Exists(ctx, key)
 }
