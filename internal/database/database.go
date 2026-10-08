@@ -25,6 +25,7 @@ func New(cfg config.DatabaseConfig) (*sql.DB, error) {
 
 	// Test connection
 	if err := db.Ping(); err != nil {
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 

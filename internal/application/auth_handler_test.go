@@ -1,4 +1,4 @@
-package auth
+package application
 
 import (
 	"bytes"
@@ -7,17 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"boilerplate-be/internal/middleware"
+	"boilerplate-be/internal/config"
+	"boilerplate-be/internal/module/auth"
+	"boilerplate-be/internal/module/rbac"
 	apperrors "boilerplate-be/internal/shared/errors"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func setupTestApp(authHandler *AuthHandler) *fiber.App {
-	app := fiber.New(fiber.Config{ErrorHandler: middleware.ErrorHandler})
-	app.Post("/register", authHandler.Register)
-	app.Post("/login", authHandler.Login)
-	return app
+func setupTestApp(authHandler *auth.AuthHandler) *fiber.App {
+	cfg := config.New()
+	cfg.RateLimit.Max = 1000
+	return New(cfg, Dependencies{Auth: authHandler, RBAC: rbac.NewRBACHandler(nil), RateLimitStorage: &testStorage{data: make(map[string][]byte)}}, Options{})
 }
 
 func TestAuthHandler_Register(t *testing.T) {
@@ -59,9 +60,9 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := setupTestApp(NewAuthHandler(&mockAuthUseCase{}, time.Hour))
+			app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour))
 			body, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
+			req := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req, -1)
@@ -103,9 +104,9 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := setupTestApp(NewAuthHandler(&mockAuthUseCase{loginErr: tt.loginErr}, time.Hour))
+			app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{loginErr: tt.loginErr}, time.Hour))
 			body, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
+			req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := app.Test(req, -1)
@@ -120,8 +121,8 @@ func TestAuthHandler_Login(t *testing.T) {
 }
 
 func TestAuthHandler_UsesConfiguredAccessExpiry(t *testing.T) {
-	app := setupTestApp(NewAuthHandler(&mockAuthUseCase{}, 2*time.Hour))
-	req := httptest.NewRequest("POST", "/login", bytes.NewBufferString(`{"email":"test@example.com","password":"password123"}`))
+	app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{}, 2*time.Hour))
+	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewBufferString(`{"email":"test@example.com","password":"password123"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := app.Test(req, -1)
@@ -146,9 +147,9 @@ type mockAuthUseCase struct {
 	loginErr error
 }
 
-func (m *mockAuthUseCase) Register(email, password, name string) (*User, string, string, error) {
+func (m *mockAuthUseCase) Register(email, password, name string) (*auth.User, string, string, error) {
 	now := time.Now()
-	return &User{ID: "generated-id", Email: email, Name: name, Role: "user", CreatedAt: now, UpdatedAt: now}, "access", "refresh", nil
+	return &auth.User{ID: "generated-id", Email: email, Name: name, Role: "user", CreatedAt: now, UpdatedAt: now}, "access", "refresh", nil
 }
 
 func (m *mockAuthUseCase) Login(email, password string) (string, string, error) {
@@ -164,6 +165,6 @@ func (m *mockAuthUseCase) RefreshToken(refreshToken string) (string, string, err
 
 func (m *mockAuthUseCase) Logout(sessionID string) error { return nil }
 
-func (m *mockAuthUseCase) GetProfile(userID string) (*User, error) { return nil, nil }
+func (m *mockAuthUseCase) GetProfile(userID string) (*auth.User, error) { return nil, nil }
 
-func (m *mockAuthUseCase) UpdateProfile(userID, name string) (*User, error) { return nil, nil }
+func (m *mockAuthUseCase) UpdateProfile(userID, name string) (*auth.User, error) { return nil, nil }

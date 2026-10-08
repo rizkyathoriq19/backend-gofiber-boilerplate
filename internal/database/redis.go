@@ -37,6 +37,7 @@ func NewRedis(cfg config.RedisConfig) (*RedisClient, error) {
 	defer cancel()
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
+		_ = rdb.Close()
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 

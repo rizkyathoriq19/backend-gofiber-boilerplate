@@ -4,22 +4,36 @@ import (
 	"boilerplate-be/internal/config"
 	"boilerplate-be/internal/shared/errors"
 	"boilerplate-be/internal/shared/response"
+	"context"
+	"fmt"
+	"net"
+	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/storage/redis/v3"
+	goredis "github.com/redis/go-redis/v9"
 )
 
-// RateLimitMiddleware creates a rate limiter using Fiber's built-in limiter with Redis storage
-func RateLimitMiddleware(cfg *config.Config) fiber.Handler {
-	// Create Redis storage for rate limiter
-	storage := redis.New(redis.Config{
-		Host:     cfg.Redis.Host,
-		Port:     parsePort(cfg.Redis.Port),
+// NewRateLimitStorage creates caller-owned Redis storage. Close it after HTTP shutdown.
+func NewRateLimitStorage(cfg *config.Config) (*redis.Storage, error) {
+	client := goredis.NewClient(&goredis.Options{
+		Addr:     net.JoinHostPort(cfg.Redis.Host, strconv.Itoa(parsePort(cfg.Redis.Port))),
 		Password: cfg.Redis.Password,
-		Database: cfg.Redis.DB,
+		DB:       cfg.Redis.DB,
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := client.Ping(ctx).Err(); err != nil {
+		_ = client.Close()
+		return nil, fmt.Errorf("failed to connect rate-limit storage: %w", err)
+	}
+	return redis.NewFromConnection(client), nil
+}
 
+// RateLimitMiddleware uses supplied storage without acquiring or owning infrastructure.
+func RateLimitMiddleware(cfg *config.Config, storage fiber.Storage) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        cfg.RateLimit.Max,
 		Expiration: cfg.RateLimit.Window,
@@ -39,14 +53,7 @@ func RateLimitMiddleware(cfg *config.Config) fiber.Handler {
 }
 
 // EndpointRateLimitMiddleware creates a rate limiter for specific endpoints
-func EndpointRateLimitMiddleware(cfg *config.Config, maxRequests int, keyPrefix string) fiber.Handler {
-	storage := redis.New(redis.Config{
-		Host:     cfg.Redis.Host,
-		Port:     parsePort(cfg.Redis.Port),
-		Password: cfg.Redis.Password,
-		Database: cfg.Redis.DB,
-	})
-
+func EndpointRateLimitMiddleware(cfg *config.Config, storage fiber.Storage, maxRequests int, keyPrefix string) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        maxRequests,
 		Expiration: cfg.RateLimit.Window,

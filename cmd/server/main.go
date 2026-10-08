@@ -20,34 +20,41 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	_ "boilerplate-be/docs"
+	"boilerplate-be/internal/application"
 	"boilerplate-be/internal/config"
 	"boilerplate-be/internal/database"
 	"boilerplate-be/internal/delivery/websocket"
 	"boilerplate-be/internal/middleware"
 	"boilerplate-be/internal/module/auth"
 	"boilerplate-be/internal/module/rbac"
-	"boilerplate-be/internal/shared/errors"
-	"boilerplate-be/internal/shared/response"
+
 	"boilerplate-be/internal/shared/security"
 	"boilerplate-be/internal/shared/utils"
-	"boilerplate-be/web"
-
-	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
-	"github.com/gofiber/fiber/v2/middleware/etag"
-	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	err := run(ctx)
+	stop()
+	if err != nil {
+		log.Printf("Server failed: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context) error {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -59,16 +66,22 @@ func main() {
 	// Initialize database
 	db, err := database.New(cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return fmt.Errorf("connect to database: %w", err)
 	}
 	defer db.Close()
 
 	// Initialize Redis
 	redisClient, err := database.NewRedis(cfg.Redis)
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		return fmt.Errorf("connect to Redis: %w", err)
 	}
 	defer redisClient.Close()
+
+	rateLimitStorage, err := middleware.NewRateLimitStorage(cfg)
+	if err != nil {
+		return fmt.Errorf("connect rate-limit storage: %w", err)
+	}
+	defer rateLimitStorage.Close()
 
 	// Initialize cache
 	cacheHelper := utils.NewCacheHelper(redisClient, cfg.Redis.DefaultTTL)
@@ -91,170 +104,41 @@ func main() {
 
 	// ==================== Initialize WebSocket ====================
 	wsHub := websocket.NewHub()
+	defer wsHub.Shutdown()
 	go wsHub.Run()
 
-	// Initialize Fiber app with optimized config
-	app := fiber.New(fiber.Config{
-		AppName:      cfg.App.Name,
-		ErrorHandler: middleware.ErrorHandler,
-		JSONEncoder:  json.Marshal,
-		JSONDecoder:  json.Unmarshal,
-		Prefork:      cfg.App.Prefork,
-		// Performance optimizations
-		ReduceMemoryUsage:     true,
-		DisableStartupMessage: cfg.App.Env == "production",
-		ReadBufferSize:        4096,
-		WriteBufferSize:       4096,
-	})
+	app := application.New(cfg, application.Dependencies{
+		Auth: authHandler, RBAC: rbacHandler, Authorization: rbacUseCase,
+		Sessions: sessionManager, RateLimitStorage: rateLimitStorage, WebSocket: wsHub,
+	}, application.Options{Docs: true, Presentation: true})
 
-	// Add middleware (order matters!)
-	app.Use(recover.New())
-	app.Use(middleware.RequestIDMiddleware())
-	app.Use(middleware.LoggerMiddleware(cfg.App.Env))
-	app.Use(compress.New())
-	app.Use(etag.New())
-	app.Use(middleware.CorsMiddleware(cfg))
-	app.Use(middleware.HelmetMiddleware())
-	app.Use(middleware.RateLimitMiddleware(cfg))
+	return serve(ctx, app, ":"+cfg.App.Port)
+}
 
-	// Swagger UI
-	app.Get("/swagger/*", swagger.New(swagger.Config{
-		DeepLinking: true,
-	}))
-
-	// Serve static docs files (architecture diagrams, etc)
-	app.Static("/docs", "./docs")
-
-	// Health check endpoints
-	app.Get("/ping", func(c *fiber.Ctx) error {
-		return c.SendString("pong")
-	})
-
-	// ==================== WebSocket Routes ====================
-	websocket.RegisterRoutes(app, wsHub)
-
-	// Routes
-	api := app.Group("/api/v1")
-
-	// ==================== Public Routes ====================
-	// Auth routes (public)
-	authGroup := api.Group("/auth")
-	authGroup.Post("/register", authHandler.Register)
-	authGroup.Post("/login", authHandler.Login)
-	authGroup.Post("/refresh", authHandler.RefreshToken)
-
-	// ==================== Protected Routes (Authenticated Users) ====================
-	// Auth routes (protected)
-	authProtected := authGroup.Group("", middleware.AuthMiddleware(sessionManager))
-	authProtected.Post("/logout", authHandler.Logout)
-	authProtected.Get("/profile", authHandler.Profile)
-	authProtected.Put("/profile", authHandler.UpdateProfile)
-	authProtected.Get("/my-roles", rbacHandler.GetMyRoles)
-	authProtected.Get("/my-permissions", rbacHandler.GetMyPermissions)
-
-	// ==================== Super Admin Routes ====================
-	// Super admin routes (requires super_admin role)
-	superAdmin := api.Group("/super-admin",
-		middleware.AuthMiddleware(sessionManager),
-		middleware.IsSuperAdmin(rbacUseCase),
-	)
-
-	// User role management
-	superAdmin.Get("/users/:userId/roles", rbacHandler.GetUserRoles)
-	superAdmin.Post("/users/:userId/roles", rbacHandler.AssignRoleToUser)
-	superAdmin.Delete("/users/:userId/roles/:roleId", rbacHandler.RemoveRoleFromUser)
-
-	// Role management
-	superAdmin.Get("/roles", rbacHandler.GetRoles)
-	superAdmin.Get("/roles/:id", rbacHandler.GetRole)
-	superAdmin.Post("/roles", rbacHandler.CreateRole)
-	superAdmin.Put("/roles/:id", rbacHandler.UpdateRole)
-	superAdmin.Delete("/roles/:id", rbacHandler.DeleteRole)
-
-	// Permission management
-	superAdmin.Get("/permissions", rbacHandler.GetPermissions)
-	superAdmin.Get("/roles/:id/permissions", rbacHandler.GetRolePermissions)
-	superAdmin.Post("/roles/:id/permissions", rbacHandler.AssignPermissionToRole)
-	superAdmin.Delete("/roles/:id/permissions/:permissionId", rbacHandler.RemovePermissionFromRole)
-
-	// Health check - HTML UI
-	api.Get("/health", func(c *fiber.Ctx) error {
-		html, err := web.RenderHealth(cfg.App.Name)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString("Error rendering page")
-		}
-		c.Set("Content-Type", "text/html")
-		return c.SendString(html)
-	})
-
-	// Root path handler - Welcome UI
-	app.Get("/", func(c *fiber.Ctx) error {
-		html, err := web.RenderIndex(cfg.App.Name)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString("Error rendering page")
-		}
-		c.Set("Content-Type", "text/html")
-		return c.SendString(html)
-	})
-
-	// Resource not found page
-	app.Get("/not-found", func(c *fiber.Ctx) error {
-		html, err := web.RenderNotFound()
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).SendString("Resource Not Found")
-		}
-		c.Set("Content-Type", "text/html")
-		return c.Status(fiber.StatusNotFound).SendString(html)
-	})
-
-	// 404 Not Found handler - HTML UI
-	app.Use(func(c *fiber.Ctx) error {
-		// Check Accept header - return JSON for API clients
-		acceptHeader := c.Get("Accept")
-		if acceptHeader == "application/json" {
-			return c.Status(fiber.StatusNotFound).JSON(
-				response.CreateErrorResponse(c, errors.New(errors.ResourceNotFound)),
-			)
-		}
-
-		// Return HTML for browser routes
-		var html string
-		var err error
-
-		// Use not_found template for API routes, 404 for other routes
-		if len(c.Path()) > 4 && c.Path()[:4] == "/api" {
-			html, err = web.RenderNotFound()
-		} else {
-			html, err = web.Render404()
-		}
-
-		if err != nil {
-			return c.Status(fiber.StatusNotFound).SendString("Page Not Found")
-		}
-		c.Set("Content-Type", "text/html")
-		return c.Status(fiber.StatusNotFound).SendString(html)
-	})
-
-	// Graceful shutdown
-	go func() {
-		if err := app.Listen(":" + cfg.App.Port); err != nil {
-			log.Fatalf("Server failed to start: %v", err)
-		}
-	}()
-
-	log.Printf("Server started on port %s", cfg.App.Port)
-	log.Printf("Swagger UI: http://localhost:%s/swagger/", cfg.App.Port)
-
-	// Wait for interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutting down server...")
-
-	if err := app.Shutdown(); err != nil {
-		log.Printf("Server forced to shutdown: %v", err)
+func serve(ctx context.Context, app *fiber.App, address string) error {
+	if ctx.Err() != nil {
+		return nil
+	}
+	listenDone := make(chan error, 1)
+	go func() { listenDone <- app.Listen(address) }()
+	select {
+	case err := <-listenDone:
+		return err
+	case <-ctx.Done():
 	}
 
-	log.Println("Server exited")
+	// Cancellation can arrive before Fiber registers its listener. Retry shutdown
+	// until Listen returns. Keep dependencies alive while active requests drain.
+	// ponytail: drain without a deadline; bounded shutdown needs cooperative handler cancellation.
+	retry := time.NewTicker(10 * time.Millisecond)
+	defer retry.Stop()
+	for {
+		shutdownErr := app.Shutdown()
+		select {
+		case listenErr := <-listenDone:
+			return errors.Join(listenErr, shutdownErr)
+
+		case <-retry.C:
+		}
+	}
 }

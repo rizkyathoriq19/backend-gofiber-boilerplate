@@ -17,6 +17,7 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 ```
 ├── cmd/server/main.go       # Entry point
 ├── internal/
+│   ├── application/         # Production HTTP assembly (also used by route tests)
 │   ├── config/              # App configuration
 │   ├── database/            # PostgreSQL & Redis
 │   ├── delivery/            # Delivery mechanisms
@@ -35,6 +36,39 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 ```
 
 ## Quick Start
+
+### Application composition
+
+`application.New(config, dependencies, options)` assembles the production Fiber
+application without opening connections, starting workers, or listening. Supply
+the existing auth/RBAC handlers, authorization use case, login-session manager,
+and already-created rate-limit storage through `application.Dependencies`.
+
+Set `Options{Docs: true, Presentation: true}` and provide a WebSocket hub to retain
+all default routes. Zero options omit Swagger/static docs and HTML presentation;
+a nil hub omits WebSocket routes. Unknown routes then use the JSON error envelope.
+These are explicit composition choices, not environment feature flags.
+
+The process entry point owns connection acquisition, hub execution, signal
+handling, HTTP shutdown, and cleanup. Close supplied resources only after HTTP
+shutdown; both rate-limit middleware constructors now take caller-owned storage.
+Shutdown waits for in-flight HTTP requests before closing dependencies, as before;
+a bounded drain would require cooperative request cancellation.
+`middleware.NewRateLimitStorage` returns storage plus an error and closes its
+client when connection acquisition fails. Route tests use this same application
+assembly with in-memory adapters and `app.Test`, without infrastructure.
+
+To verify production resource cleanup, use disposable loopback PostgreSQL and
+Redis instances, then run:
+
+```bash
+TEST_POSTGRES_PORT=<port> TEST_REDIS_PORT=<port> go test -race ./cmd/server -run TestRunClosesResourcesOnExit
+```
+
+The test uses the
+`postgres` database and user with password `password`, needs no schema, and checks
+both startup failure and successful shutdown. Do not point it at application
+infrastructure or run other tests against the same instances concurrently.
 
 ### Prerequisites
 - Go 1.24+
