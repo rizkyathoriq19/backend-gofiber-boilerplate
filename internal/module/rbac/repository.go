@@ -1,26 +1,22 @@
 package rbac
 
 import (
-	"context"
 	"database/sql"
 	"time"
 
 	"boilerplate-be/internal/shared/errors"
-	"boilerplate-be/internal/shared/utils"
 
 	"github.com/google/uuid"
 )
 
 type rbacRepository struct {
-	db          *sql.DB
-	cacheHelper *utils.CacheHelper
+	db *sql.DB
 }
 
 // NewRBACRepository creates a new RBAC repository
-func NewRBACRepository(db *sql.DB, cacheHelper *utils.CacheHelper) RBACRepository {
+func NewRBACRepository(db *sql.DB) RBACRepository {
 	return &rbacRepository{
-		db:          db,
-		cacheHelper: cacheHelper,
+		db: db,
 	}
 }
 
@@ -45,6 +41,9 @@ func (r *rbacRepository) GetRoles() ([]Role, error) {
 		roles = append(roles, role)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
 	return roles, nil
 }
 
@@ -139,6 +138,9 @@ func (r *rbacRepository) GetPermissions() ([]Permission, error) {
 		permissions = append(permissions, permission)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
 	return permissions, nil
 }
 
@@ -187,14 +189,6 @@ func (r *rbacRepository) CreatePermission(permission *Permission) error {
 // ==================== User-Role Operations ====================
 
 func (r *rbacRepository) GetUserRoles(userID string) ([]Role, error) {
-	cacheKey := r.cacheHelper.BuildUserCacheKey(userID, "roles")
-
-	// Try cache first
-	var cachedRoles []Role
-	if err := r.cacheHelper.GetJSON(context.Background(), cacheKey, &cachedRoles); err == nil {
-		return cachedRoles, nil
-	}
-
 	query := `
 		SELECT r.id, r.name, r.description, r.created_at
 		FROM roles r
@@ -219,8 +213,9 @@ func (r *rbacRepository) GetUserRoles(userID string) ([]Role, error) {
 		roles = append(roles, role)
 	}
 
-	// Cache the result
-	_ = r.cacheHelper.CacheJSON(context.Background(), cacheKey, roles, 5*time.Minute)
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
 
 	return roles, nil
 }
@@ -232,8 +227,6 @@ func (r *rbacRepository) AssignRoleToUser(userID, roleID string) error {
 		return errors.Wrap(err, errors.DatabaseInsertFailed)
 	}
 
-	// Invalidate cache
-	_ = r.cacheHelper.InvalidateUserCache(context.Background(), userID)
 	return nil
 }
 
@@ -244,8 +237,6 @@ func (r *rbacRepository) RemoveRoleFromUser(userID, roleID string) error {
 		return errors.Wrap(err, errors.DatabaseDeleteFailed)
 	}
 
-	// Invalidate cache
-	_ = r.cacheHelper.InvalidateUserCache(context.Background(), userID)
 	return nil
 }
 
@@ -290,6 +281,9 @@ func (r *rbacRepository) GetRolePermissions(roleID string) ([]Permission, error)
 		permissions = append(permissions, permission)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
 	return permissions, nil
 }
 
@@ -314,14 +308,6 @@ func (r *rbacRepository) RemovePermissionFromRole(roleID, permissionID string) e
 // ==================== User Permission Check ====================
 
 func (r *rbacRepository) GetUserPermissions(userID string) ([]Permission, error) {
-	cacheKey := r.cacheHelper.BuildUserCacheKey(userID, "permissions")
-
-	// Try cache first
-	var cachedPermissions []Permission
-	if err := r.cacheHelper.GetJSON(context.Background(), cacheKey, &cachedPermissions); err == nil {
-		return cachedPermissions, nil
-	}
-
 	query := `
 		SELECT DISTINCT p.id, p.name, p.description, p.resource, p.action, p.created_at
 		FROM permissions p
@@ -347,8 +333,9 @@ func (r *rbacRepository) GetUserPermissions(userID string) ([]Permission, error)
 		permissions = append(permissions, permission)
 	}
 
-	// Cache the result
-	_ = r.cacheHelper.CacheJSON(context.Background(), cacheKey, permissions, 5*time.Minute)
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, errors.DatabaseQueryFailed)
+	}
 
 	return permissions, nil
 }

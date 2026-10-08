@@ -58,6 +58,7 @@ jobs:
           DB_PASSWORD: postgres
           DB_NAME: boilerplate_test
           DB_SSL_MODE: disable
+          RBAC_TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/boilerplate_test?sslmode=disable
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: test-secret-key

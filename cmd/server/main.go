@@ -79,7 +79,7 @@ func main() {
 
 	// ==================== Initialize Repositories ====================
 	authRepo := auth.NewAuthRepository(db, cacheHelper)
-	rbacRepo := rbac.NewRBACRepository(db, cacheHelper)
+	rbacRepo := rbac.NewRBACRepository(db)
 
 	// ==================== Initialize Use Cases ====================
 	authUseCase := auth.NewAuthUseCase(authRepo, sessionManager)
