@@ -61,7 +61,10 @@ func assertError(t *testing.T, resp *http.Response, status int, code enum.ErrorC
 }
 
 func TestAssemblyLoginSessionAndAuthorization(t *testing.T) {
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg.RateLimit.Max = 1000
 	store := &sessionStore{data: map[string]string{}}
 	sessions := security.NewLoginSessionManager(security.NewJWTManager("test-secret", time.Hour, time.Hour), store)
@@ -118,7 +121,10 @@ func TestAssemblyOptionalRoutes(t *testing.T) {
 	t.Chdir("../..") // Match the production working directory for static documentation.
 	for _, options := range []Options{{}, {Docs: true}, {Presentation: true}, {Docs: true, Presentation: true}} {
 		for _, includeWS := range []bool{false, true} {
-			cfg := config.New()
+			cfg, err := config.New()
+			if err != nil {
+				t.Fatal(err)
+			}
 			cfg.RateLimit.Max = 1000
 			deps := Dependencies{Auth: auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour), RBAC: rbac.NewRBACHandler(nil), RateLimitStorage: &testStorage{data: map[string][]byte{}}}
 			if includeWS {
@@ -163,7 +169,10 @@ func TestAssemblyOptionalRoutes(t *testing.T) {
 }
 
 func TestAssemblyMiddlewareOrderAndErrors(t *testing.T) {
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg.RateLimit.Max = 1
 	cfg.CORS.AllowedOrigins = []string{"https://client.example"}
 	app := New(cfg, Dependencies{Auth: auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour), RBAC: rbac.NewRBACHandler(nil), RateLimitStorage: &testStorage{data: map[string][]byte{}}}, Options{})

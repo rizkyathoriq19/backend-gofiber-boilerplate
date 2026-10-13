@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -12,7 +13,6 @@ type Config struct {
 	Database  DatabaseConfig
 	Redis     RedisConfig
 	JWT       JWTConfig
-	Security  SecurityConfig
 	CORS      CORSConfig
 	RateLimit RateLimitConfig
 }
@@ -20,14 +20,13 @@ type Config struct {
 type AppConfig struct {
 	Name    string
 	Env     string
-	Host    string
-	Port    string
+	Port    int
 	Prefork bool
 }
 
 type DatabaseConfig struct {
 	Host            string
-	Port            string
+	Port            int
 	User            string
 	Password        string
 	Name            string
@@ -38,11 +37,11 @@ type DatabaseConfig struct {
 }
 
 type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-	DB       int
-	PoolSize int
+	Host       string
+	Port       int
+	Password   string
+	DB         int
+	PoolSize   int
 	DefaultTTL time.Duration
 }
 
@@ -50,10 +49,6 @@ type JWTConfig struct {
 	Secret        string
 	Expiry        time.Duration
 	RefreshExpiry time.Duration
-}
-
-type SecurityConfig struct {
-	BCryptCost int
 }
 
 type CORSConfig struct {
@@ -67,41 +62,35 @@ type RateLimitConfig struct {
 	Window time.Duration
 }
 
-func New() *Config {
-	return &Config{
+func New() (*Config, error) {
+	cfg := &Config{
 		App: AppConfig{
-			Name:    getEnv("APP_NAME", "Go Fiber Auth API"),
-			Env:     getEnv("APP_ENV", "development"),
-			Host:    getEnv("APP_HOST", "localhost"),
-			Port:    getEnv("APP_PORT", "3000"),
-			Prefork: getEnv("APP_PREFORK", "false") == "true",
+			Name: getEnv("APP_NAME", "Go Fiber Auth API"),
+			Env:  getEnv("APP_ENV", "development"),
+			Port: 3000,
 		},
 		Database: DatabaseConfig{
 			Host:            getEnv("DB_HOST", "localhost"),
-			Port:            getEnv("DB_PORT", "5432"),
+			Port:            5432,
 			User:            getEnv("DB_USER", "postgres"),
 			Password:        getEnv("DB_PASSWORD", "password"),
 			Name:            getEnv("DB_NAME", "go_fiber_auth"),
 			SSLMode:         getEnv("DB_SSL_MODE", "disable"),
-			MaxOpenConns:    parseInt(getEnv("DB_MAX_OPEN_CONNS", "25"), 25),
-			MaxIdleConns:    parseInt(getEnv("DB_MAX_IDLE_CONNS", "25"), 25),
-			ConnMaxLifetime: parseDuration(getEnv("DB_CONN_MAX_LIFETIME", "5m"), 5*time.Minute),
+			MaxOpenConns:    25,
+			MaxIdleConns:    25,
+			ConnMaxLifetime: 5 * time.Minute,
 		},
 		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnv("REDIS_PORT", "6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       parseInt(getEnv("REDIS_DB", "0"), 0),
-			PoolSize: parseInt(getEnv("REDIS_POOL_SIZE", "10"), 10),
-			DefaultTTL: parseDuration(getEnv("REDIS_DEFAULT_TTL", "1h"), 1*time.Hour),
+			Host:       getEnv("REDIS_HOST", "localhost"),
+			Port:       6379,
+			Password:   getEnv("REDIS_PASSWORD", ""),
+			PoolSize:   10,
+			DefaultTTL: time.Hour,
 		},
 		JWT: JWTConfig{
 			Secret:        getEnv("JWT_SECRET", "your-secret-key"),
-			Expiry:        parseDuration(getEnv("JWT_EXPIRY", "24h"), 24*time.Hour),
-			RefreshExpiry: parseDuration(getEnv("JWT_REFRESH_EXPIRY", "168h"), 168*time.Hour),
-		},
-		Security: SecurityConfig{
-			BCryptCost: 12,
+			Expiry:        24 * time.Hour,
+			RefreshExpiry: 168 * time.Hour,
 		},
 		CORS: CORSConfig{
 			AllowedOrigins: splitAndTrim(getEnv("CORS_ALLOWED_ORIGINS", "*")),
@@ -109,31 +98,167 @@ func New() *Config {
 			AllowedHeaders: splitAndTrim(getEnv("CORS_ALLOWED_HEADERS", "*")),
 		},
 		RateLimit: RateLimitConfig{
-			Max:    parseInt(getEnv("RATE_LIMIT_MAX", "100"), 100),
-			Window: parseDuration(getEnv("RATE_LIMIT_WINDOW", "1m"), time.Minute),
+			Max:    100,
+			Window: time.Minute,
 		},
 	}
+
+	var err error
+	if cfg.App.Port, err = intEnv("APP_PORT", cfg.App.Port); err != nil {
+		return nil, err
+	}
+	if cfg.App.Prefork, err = boolEnv("APP_PREFORK", false); err != nil {
+		return nil, err
+	}
+	if cfg.Database.Port, err = intEnv("DB_PORT", cfg.Database.Port); err != nil {
+		return nil, err
+	}
+	if cfg.Database.MaxOpenConns, err = intEnv("DB_MAX_OPEN_CONNS", cfg.Database.MaxOpenConns); err != nil {
+		return nil, err
+	}
+	if cfg.Database.MaxIdleConns, err = intEnv("DB_MAX_IDLE_CONNS", cfg.Database.MaxIdleConns); err != nil {
+		return nil, err
+	}
+	if cfg.Database.ConnMaxLifetime, err = durationEnv("DB_CONN_MAX_LIFETIME", cfg.Database.ConnMaxLifetime); err != nil {
+		return nil, err
+	}
+	if cfg.Redis.Port, err = intEnv("REDIS_PORT", cfg.Redis.Port); err != nil {
+		return nil, err
+	}
+	if cfg.Redis.DB, err = intEnv("REDIS_DB", cfg.Redis.DB); err != nil {
+		return nil, err
+	}
+	if cfg.Redis.PoolSize, err = intEnv("REDIS_POOL_SIZE", cfg.Redis.PoolSize); err != nil {
+		return nil, err
+	}
+	if cfg.Redis.DefaultTTL, err = durationEnv("REDIS_DEFAULT_TTL", cfg.Redis.DefaultTTL); err != nil {
+		return nil, err
+	}
+	if cfg.JWT.Expiry, err = durationEnv("JWT_EXPIRY", cfg.JWT.Expiry); err != nil {
+		return nil, err
+	}
+	if cfg.JWT.RefreshExpiry, err = durationEnv("JWT_REFRESH_EXPIRY", cfg.JWT.RefreshExpiry); err != nil {
+		return nil, err
+	}
+	if cfg.RateLimit.Max, err = intEnv("RATE_LIMIT_MAX", cfg.RateLimit.Max); err != nil {
+		return nil, err
+	}
+	if cfg.RateLimit.Window, err = durationEnv("RATE_LIMIT_WINDOW", cfg.RateLimit.Window); err != nil {
+		return nil, err
+	}
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
+	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return defaultValue
 }
 
-func parseDuration(value string, defaultValue time.Duration) time.Duration {
-	if duration, err := time.ParseDuration(value); err == nil {
-		return duration
+func intEnv(key string, defaultValue int) (int, error) {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return defaultValue, nil
 	}
-	return defaultValue
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be an integer: %w", key, err)
+	}
+	return i, nil
 }
 
-func parseInt(value string, defaultValue int) int {
-	if i, err := strconv.Atoi(value); err == nil {
-		return i
+func durationEnv(key string, defaultValue time.Duration) (time.Duration, error) {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return defaultValue, nil
 	}
-	return defaultValue
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a duration: %w", key, err)
+	}
+	return duration, nil
+}
+
+func boolEnv(key string, defaultValue bool) (bool, error) {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return defaultValue, nil
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("%s must be a boolean: %w", key, err)
+	}
+	return parsed, nil
+}
+
+func (c *Config) validate() error {
+	c.App.Env = strings.ToLower(strings.TrimSpace(c.App.Env))
+	if c.App.Env == "" {
+		return fmt.Errorf("APP_ENV must not be empty")
+	}
+	if c.App.Env == "prod" {
+		c.App.Env = "production"
+	}
+
+	for _, port := range []struct {
+		name  string
+		value int
+	}{{"APP_PORT", c.App.Port}, {"DB_PORT", c.Database.Port}, {"REDIS_PORT", c.Redis.Port}} {
+		if port.value < 1 || port.value > 65535 {
+			return fmt.Errorf("%s must be between 1 and 65535", port.name)
+		}
+	}
+	if c.Database.MaxOpenConns < 0 {
+		return fmt.Errorf("DB_MAX_OPEN_CONNS must be non-negative")
+	}
+	if c.Database.MaxIdleConns < 0 {
+		return fmt.Errorf("DB_MAX_IDLE_CONNS must be non-negative")
+	}
+	if c.Database.MaxOpenConns > 0 && c.Database.MaxIdleConns > c.Database.MaxOpenConns {
+		return fmt.Errorf("DB_MAX_IDLE_CONNS cannot exceed DB_MAX_OPEN_CONNS")
+	}
+	if c.Redis.DB < 0 {
+		return fmt.Errorf("REDIS_DB must be non-negative")
+	}
+	if c.Redis.PoolSize < 0 {
+		return fmt.Errorf("REDIS_POOL_SIZE must be non-negative")
+	}
+	if c.Redis.DefaultTTL < 0 {
+		return fmt.Errorf("REDIS_DEFAULT_TTL must be non-negative")
+	}
+	if c.JWT.Expiry <= 0 {
+		return fmt.Errorf("JWT_EXPIRY must be positive")
+	}
+	if c.JWT.RefreshExpiry <= 0 {
+		return fmt.Errorf("JWT_REFRESH_EXPIRY must be positive")
+	}
+	if strings.TrimSpace(c.JWT.Secret) == "" {
+		return fmt.Errorf("JWT_SECRET must not be empty")
+	}
+	if c.App.Env == "production" && isPlaceholderSecret(c.JWT.Secret) {
+		return fmt.Errorf("JWT_SECRET must be set to a non-placeholder value when APP_ENV=production")
+	}
+	if c.RateLimit.Max <= 0 {
+		return fmt.Errorf("RATE_LIMIT_MAX must be positive")
+	}
+	if c.RateLimit.Window <= 0 {
+		return fmt.Errorf("RATE_LIMIT_WINDOW must be positive")
+	}
+	return nil
+}
+
+func isPlaceholderSecret(secret string) bool {
+	switch strings.ToLower(strings.TrimSpace(secret)) {
+	case "your-secret-key", "your-secret", "your-jwt-secret", "your-super-secret-jwt-key-change-this-in-production",
+		"change-this-in-production", "change-me", "changeme", "replace-me", "secret", "password":
+		return true
+	default:
+		return false
+	}
 }
 
 func splitAndTrim(value string) []string {

@@ -61,7 +61,10 @@ func run(ctx context.Context) error {
 	}
 
 	// Initialize config
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
 
 	// Initialize database
 	db, err := database.New(cfg.Database)
@@ -112,7 +115,7 @@ func run(ctx context.Context) error {
 		Sessions: sessionManager, RateLimitStorage: rateLimitStorage, WebSocket: wsHub,
 	}, application.Options{Docs: true, Presentation: true})
 
-	return serve(ctx, app, ":"+cfg.App.Port)
+	return serve(ctx, app, fmt.Sprintf(":%d", cfg.App.Port))
 }
 
 func serve(ctx context.Context, app *fiber.App, address string) error {

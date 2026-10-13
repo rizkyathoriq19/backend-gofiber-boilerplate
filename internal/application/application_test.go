@@ -12,7 +12,10 @@ import (
 )
 
 func TestAssemblyPublicAndProtectedRoutes(t *testing.T) {
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg.RateLimit.Max = 1000
 	storage := &testStorage{data: make(map[string][]byte)}
 	app := New(cfg, Dependencies{Auth: auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour), RBAC: rbac.NewRBACHandler(nil), RateLimitStorage: storage}, Options{})
