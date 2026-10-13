@@ -15,8 +15,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func setupTestApp(authHandler *auth.AuthHandler) *fiber.App {
-	cfg := config.New()
+func setupTestApp(t *testing.T, authHandler *auth.AuthHandler) *fiber.App {
+	t.Helper()
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	cfg.RateLimit.Max = 1000
 	return New(cfg, Dependencies{Auth: authHandler, RBAC: rbac.NewRBACHandler(nil), RateLimitStorage: &testStorage{data: make(map[string][]byte)}}, Options{})
 }
@@ -60,7 +64,7 @@ func TestAuthHandler_Register(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour))
+			app := setupTestApp(t, auth.NewAuthHandler(&mockAuthUseCase{}, time.Hour))
 			body, _ := json.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/api/v1/auth/register", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
@@ -104,7 +108,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{loginErr: tt.loginErr}, time.Hour))
+			app := setupTestApp(t, auth.NewAuthHandler(&mockAuthUseCase{loginErr: tt.loginErr}, time.Hour))
 			body, _ := json.Marshal(tt.requestBody)
 			req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
@@ -121,7 +125,7 @@ func TestAuthHandler_Login(t *testing.T) {
 }
 
 func TestAuthHandler_UsesConfiguredAccessExpiry(t *testing.T) {
-	app := setupTestApp(auth.NewAuthHandler(&mockAuthUseCase{}, 2*time.Hour))
+	app := setupTestApp(t, auth.NewAuthHandler(&mockAuthUseCase{}, 2*time.Hour))
 	req := httptest.NewRequest("POST", "/api/v1/auth/login", bytes.NewBufferString(`{"email":"test@example.com","password":"password123"}`))
 	req.Header.Set("Content-Type", "application/json")
 

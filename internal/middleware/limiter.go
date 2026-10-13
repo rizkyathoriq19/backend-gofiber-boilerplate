@@ -19,9 +19,10 @@ import (
 // NewRateLimitStorage creates caller-owned Redis storage. Close it after HTTP shutdown.
 func NewRateLimitStorage(cfg *config.Config) (*redis.Storage, error) {
 	client := goredis.NewClient(&goredis.Options{
-		Addr:     net.JoinHostPort(cfg.Redis.Host, strconv.Itoa(parsePort(cfg.Redis.Port))),
+		Addr:     net.JoinHostPort(cfg.Redis.Host, strconv.Itoa(cfg.Redis.Port)),
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.DB,
+		PoolSize: cfg.Redis.PoolSize,
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -68,18 +69,4 @@ func EndpointRateLimitMiddleware(cfg *config.Config, storage fiber.Storage, maxR
 			)
 		},
 	})
-}
-
-// parsePort converts string port to int
-func parsePort(port string) int {
-	var p int
-	for _, c := range port {
-		if c >= '0' && c <= '9' {
-			p = p*10 + int(c-'0')
-		}
-	}
-	if p == 0 {
-		return 6379 // default Redis port
-	}
-	return p
 }

@@ -6,7 +6,7 @@ A minimal, production-ready Go Fiber boilerplate with **flat RBAC**, Redis cachi
 
 - 🔐 **JWT Authentication** - Register, login, logout, refresh tokens
 - 👥 **Flat RBAC** - Roles & permissions (super_admin, user)
-- ⚡ **Redis** - Caching, rate limiting, token blacklisting
+- ⚡ **Redis** - Caching, rate limiting, login-session state
 - 🐘 **PostgreSQL** - Database with migrations
 - 📝 **Swagger** - Auto-generated API docs
 - 🔒 **Security** - CORS, Helmet, rate limiting
@@ -163,11 +163,18 @@ ws.onclose = () => console.log('Disconnected');
 
 ## Environment Variables
 
+The config loader applies defaults only when a variable is absent. Explicit malformed
+integers, durations, booleans, or ports stop startup before database or Redis
+connections are opened. `.env.example` is for local development only. Production
+requires a non-empty, non-placeholder `JWT_SECRET`; the secret value is never
+included in config errors. Docker Compose also requires `JWT_SECRET` to be set.
+
 ```env
 # Server
 APP_NAME=Go Fiber API
 APP_ENV=development
 APP_PORT=8000
+APP_PREFORK=false
 
 # Database
 DB_HOST=localhost
@@ -175,20 +182,41 @@ DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=password
 DB_NAME=boilerplate_dev
+DB_SSL_MODE=disable
+DB_MAX_OPEN_CONNS=25
+DB_MAX_IDLE_CONNS=25
+DB_CONN_MAX_LIFETIME=5m
 
 # Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+REDIS_POOL_SIZE=10
+REDIS_DEFAULT_TTL=1h
 
 # JWT
-JWT_SECRET=your-secret-key
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRY=24h
 JWT_REFRESH_EXPIRY=168h
 
 # Rate Limiting
 RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW=1m
+
+# CORS
+CORS_ALLOWED_ORIGINS=*
+CORS_ALLOWED_METHODS=GET,POST,HEAD,PUT,DELETE,PATCH
+CORS_ALLOWED_HEADERS=*
 ```
+
+All ports must be between 1 and 65535. `REDIS_DB` and `REDIS_POOL_SIZE` must be
+non-negative; a zero Redis pool size uses go-redis's default. JWT lifetimes,
+`RATE_LIMIT_MAX`, and `RATE_LIMIT_WINDOW` must be positive. `DB_MAX_OPEN_CONNS=0`
+means unlimited; `DB_MAX_IDLE_CONNS` must be non-negative and cannot exceed a
+positive open-connection limit. A non-positive `DB_CONN_MAX_LIFETIME` disables
+age-based connection closure. Redis TTL must be non-negative; zero disables
+cache expiration.
 
 ## Default Users
 

@@ -197,11 +197,14 @@ func TestRunClosesResourcesOnExit(t *testing.T) {
 		"DB_HOST": "127.0.0.1", "DB_PORT": postgresPort,
 		"DB_USER": "postgres", "DB_PASSWORD": "password", "DB_NAME": "postgres", "DB_SSL_MODE": "disable",
 		"REDIS_HOST": "127.0.0.1", "REDIS_PORT": redisPort, "REDIS_PASSWORD": "", "REDIS_DB": "0",
-		"APP_ENV": "production", "APP_PREFORK": "false",
+		"APP_ENV": "production", "APP_PREFORK": "false", "JWT_SECRET": "integration-test-secret",
 	} {
 		t.Setenv(key, value)
 	}
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		t.Fatal(err)
+	}
 	db, err := database.New(cfg.Database)
 	if err != nil {
 		t.Fatal(err)

@@ -11,7 +11,6 @@ services:
     environment:
       - APP_NAME=${APP_NAME:-Go Fiber API}
       - APP_ENV=${APP_ENV:-production}
-      - APP_HOST=0.0.0.0
       - APP_PORT=8000
       - APP_PREFORK=false
       - DB_HOST=postgres
@@ -24,12 +23,11 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - REDIS_DB=0
-      - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET to a non-placeholder production secret}
       - JWT_EXPIRY=${JWT_EXPIRY:-24h}
       - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY:-168h}
       - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-100}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-1m}
-      - BCRYPT_COST=${BCRYPT_COST:-12}
     depends_on:
       postgres:
         condition: service_healthy

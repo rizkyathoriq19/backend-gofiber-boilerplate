@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 
@@ -20,13 +21,8 @@ type RedisClient struct {
 
 // NewRedis creates a new Redis client connection
 func NewRedis(cfg config.RedisConfig) (*RedisClient, error) {
-	port, err := strconv.Atoi(cfg.Port)
-	if err != nil {
-		return nil, fmt.Errorf("invalid port number: %w", err)
-	}
-
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", cfg.Host, port),
+		Addr:     net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)),
 		Password: cfg.Password,
 		DB:       cfg.DB,
 		PoolSize: cfg.PoolSize,

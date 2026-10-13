@@ -17,10 +17,6 @@ type CacheHelper struct {
 }
 
 func NewCacheHelper(client *database.RedisClient, defaultTTL time.Duration) *CacheHelper {
-	if defaultTTL == 0 {
-		defaultTTL = 1 * time.Hour // Default 1 hour
-	}
-
 	return &CacheHelper{
 		RedisHelper: database.NewRedisHelper(client),
 		defaultTTL:  defaultTTL,

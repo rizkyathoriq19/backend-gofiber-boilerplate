@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -189,7 +190,11 @@ func TestRedisSessionManager_RenewalIsAtomic(t *testing.T) {
 	if port == "" {
 		port = "6379"
 	}
-	client, err := database.NewRedis(config.RedisConfig{Host: host, Port: port, DB: 15})
+	redisPort, err := strconv.Atoi(port)
+	if err != nil {
+		t.Fatalf("invalid REDIS_PORT: %v", err)
+	}
+	client, err := database.NewRedis(config.RedisConfig{Host: host, Port: redisPort, DB: 15})
 	if err != nil {
 		t.Skipf("Redis unavailable: %v", err)
 	}
