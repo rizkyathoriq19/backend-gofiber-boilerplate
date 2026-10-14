@@ -12,7 +12,9 @@ import (
 
 	"boilerplate-be/internal/config"
 	"boilerplate-be/internal/database"
+	wsdelivery "boilerplate-be/internal/delivery/websocket"
 
+	fastws "github.com/fasthttp/websocket"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -25,7 +27,7 @@ func TestServeReturnsBindError(t *testing.T) {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := serve(ctx, app, listener.Addr().String()); err == nil {
+	if err := serve(ctx, app, listener.Addr().String(), nil); err == nil {
 		t.Fatal("expected occupied address to fail")
 	} else {
 		var networkError *net.OpError
@@ -47,7 +49,7 @@ func TestServeCancellationClosesListener(t *testing.T) {
 	defer cancel()
 	t.Cleanup(func() { _ = app.ShutdownWithTimeout(time.Second) })
 	done := make(chan error, 1)
-	go func() { done <- serve(ctx, app, "127.0.0.1:0") }()
+	go func() { done <- serve(ctx, app, "127.0.0.1:0", nil) }()
 	var address string
 	select {
 	case address = <-listening:
@@ -80,6 +82,62 @@ func TestServeCancellationClosesListener(t *testing.T) {
 	listener.Close()
 }
 
+func TestServeShutdownStopsWebSocketHubBeforeApp(t *testing.T) {
+	hub := wsdelivery.NewHub()
+	app := fiber.New(fiber.Config{DisableStartupMessage: true})
+	wsdelivery.RegisterRoutes(app, hub)
+	listening := make(chan string, 1)
+	app.Hooks().OnListen(func(data fiber.ListenData) error {
+		listening <- net.JoinHostPort(data.Host, data.Port)
+		return nil
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	hub.Start()
+	done := make(chan error, 1)
+	go func() { done <- serve(ctx, app, "127.0.0.1:0", hub.Shutdown) }()
+	t.Cleanup(func() {
+		if err := hub.Shutdown(); err != nil {
+			t.Errorf("stop WebSocket hub: %v", err)
+		}
+		if err := app.ShutdownWithTimeout(time.Second); err != nil {
+			t.Errorf("stop HTTP server: %v", err)
+		}
+	})
+
+	var address string
+	select {
+	case address = <-listening:
+	case <-time.After(2 * time.Second):
+		t.Fatal("server did not listen")
+	}
+	client, _, err := (&fastws.Dialer{HandshakeTimeout: time.Second}).Dial("ws://"+address+"/ws/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	deadline := time.Now().Add(time.Second)
+	for hub.ClientCount() != 1 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if got := hub.ClientCount(); got != 1 {
+		t.Fatalf("client count = %d, want 1", got)
+	}
+
+	cancel()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("shutdown: %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("WebSocket hub shutdown did not unblock server shutdown")
+	}
+	if got := hub.ClientCount(); got != 0 {
+		t.Fatalf("client count after shutdown = %d, want 0", got)
+	}
+}
+
 func TestServeCancellationDuringStartup(t *testing.T) {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
 	listening, resume := make(chan struct{}), make(chan struct{})
@@ -99,7 +157,7 @@ func TestServeCancellationDuringStartup(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
-	go func() { done <- serve(ctx, app, "127.0.0.1:0") }()
+	go func() { done <- serve(ctx, app, "127.0.0.1:0", nil) }()
 	select {
 	case <-listening:
 	case <-time.After(2 * time.Second):
@@ -143,7 +201,7 @@ func TestServeDrainsInflightRequest(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		done := make(chan error, 1)
-		go func() { done <- serve(ctx, app, "127.0.0.1:0") }()
+		go func() { done <- serve(ctx, app, "127.0.0.1:0", nil) }()
 		var address string
 		select {
 		case address = <-listening:

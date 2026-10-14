@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"net"
+	"sync"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
@@ -26,45 +28,103 @@ type Client struct {
 
 	// The websocket connection
 	conn *websocket.Conn
+	// Keep the underlying connection to interrupt blocked pumps without touching Fiber's pooled wrapper.
+	rawConn net.Conn
 
 	// Buffered channel of outbound messages
 	send chan []byte
 
 	// Client identifier (optional, for tracking)
 	ID string
+
+	done       chan struct{}
+	writeDone  chan struct{}
+	stopOnce   sync.Once
+	deadlineMu sync.Mutex
 }
 
 // NewClient creates a new Client instance.
 func NewClient(hub *Hub, conn *websocket.Conn, id string) *Client {
+	var rawConn net.Conn
+	if conn != nil {
+		rawConn = conn.NetConn()
+	}
 	return &Client{
-		hub:  hub,
-		conn: conn,
-		send: make(chan []byte, 256),
-		ID:   id,
+		hub:       hub,
+		conn:      conn,
+		rawConn:   rawConn,
+		send:      make(chan []byte, 256),
+		ID:        id,
+		done:      make(chan struct{}),
+		writeDone: make(chan struct{}),
+	}
+}
+
+func (c *Client) stop() {
+	c.stopOnce.Do(func() {
+		close(c.done)
+		if c.rawConn == nil {
+			return
+		}
+		c.deadlineMu.Lock()
+		deadline := time.Now()
+		_ = c.rawConn.SetReadDeadline(deadline)
+		_ = c.rawConn.SetWriteDeadline(deadline)
+		c.deadlineMu.Unlock()
+	})
+}
+
+func (c *Client) setReadDeadline(deadline time.Time) error {
+	c.deadlineMu.Lock()
+	defer c.deadlineMu.Unlock()
+	select {
+	case <-c.done:
+		return net.ErrClosed
+	default:
+		return c.conn.SetReadDeadline(deadline)
+	}
+}
+
+func (c *Client) setWriteDeadline(deadline time.Time) error {
+	c.deadlineMu.Lock()
+	defer c.deadlineMu.Unlock()
+	select {
+	case <-c.done:
+		return net.ErrClosed
+	default:
+		return c.conn.SetWriteDeadline(deadline)
 	}
 }
 
 // ReadPump pumps messages from the websocket connection to the hub.
 func (c *Client) ReadPump() {
 	defer func() {
-		c.hub.unregister <- c
-		c.conn.Close()
+		c.hub.unregisterClient(c)
+		<-c.writeDone
+		_ = c.conn.Close()
 	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
-	if err := c.conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+	if err := c.setReadDeadline(time.Now().Add(pongWait)); err != nil {
 		return
 	}
 	c.conn.SetPongHandler(func(string) error {
-		return c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return c.setReadDeadline(time.Now().Add(pongWait))
 	})
 
 	for {
+		select {
+		case <-c.done:
+			return
+		default:
+		}
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			break
 		}
-		c.hub.broadcast <- message
+		if !c.hub.queueBroadcast(message) {
+			return
+		}
 	}
 }
 
@@ -78,8 +138,11 @@ func (c *Client) WritePump() {
 
 	for {
 		select {
+		case <-c.done:
+			return
+
 		case message, ok := <-c.send:
-			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+			if err := c.setWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				return
 			}
 			if !ok {
@@ -93,7 +156,7 @@ func (c *Client) WritePump() {
 			}
 
 		case <-ticker.C:
-			if err := c.conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+			if err := c.setWriteDeadline(time.Now().Add(writeWait)); err != nil {
 				return
 			}
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {

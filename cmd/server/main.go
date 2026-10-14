@@ -107,39 +107,45 @@ func run(ctx context.Context) error {
 
 	// ==================== Initialize WebSocket ====================
 	wsHub := websocket.NewHub()
-	defer wsHub.Shutdown()
-	go wsHub.Run()
 
 	app := application.New(cfg, application.Dependencies{
 		Auth: authHandler, RBAC: rbacHandler, Authorization: rbacUseCase,
 		Sessions: sessionManager, RateLimitStorage: rateLimitStorage, WebSocket: wsHub,
 	}, application.Options{Docs: true, Presentation: true})
 
-	return serve(ctx, app, fmt.Sprintf(":%d", cfg.App.Port))
+	wsHub.Start()
+	return serve(ctx, app, fmt.Sprintf(":%d", cfg.App.Port), wsHub.Shutdown)
 }
 
-func serve(ctx context.Context, app *fiber.App, address string) error {
+func serve(ctx context.Context, app *fiber.App, address string, shutdownModule func() error) error {
+	stopModule := func() error {
+		if shutdownModule == nil {
+			return nil
+		}
+		return shutdownModule()
+	}
 	if ctx.Err() != nil {
-		return nil
+		return stopModule()
 	}
 	listenDone := make(chan error, 1)
 	go func() { listenDone <- app.Listen(address) }()
 	select {
 	case err := <-listenDone:
-		return err
+		return errors.Join(err, stopModule())
 	case <-ctx.Done():
 	}
 
+	moduleShutdownErr := stopModule()
 	// Cancellation can arrive before Fiber registers its listener. Retry shutdown
 	// until Listen returns. Keep dependencies alive while active requests drain.
 	// ponytail: drain without a deadline; bounded shutdown needs cooperative handler cancellation.
 	retry := time.NewTicker(10 * time.Millisecond)
 	defer retry.Stop()
 	for {
-		shutdownErr := app.Shutdown()
+		appShutdownErr := app.Shutdown()
 		select {
 		case listenErr := <-listenDone:
-			return errors.Join(listenErr, shutdownErr)
+			return errors.Join(listenErr, moduleShutdownErr, appShutdownErr)
 
 		case <-retry.C:
 		}
