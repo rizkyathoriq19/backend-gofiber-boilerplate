@@ -31,24 +31,8 @@ func (h *Handler) HandleWebSocket() fiber.Handler {
 	return websocket.New(func(c *websocket.Conn) {
 		// Generate a unique client ID
 		clientID := uuid.New().String()
-
-		// Create a new client
-		client := NewClient(h.hub, c, clientID)
-
-		// Register the client
-		h.hub.register <- client
-
-		// Start the write pump in a goroutine
-		go client.WritePump()
-
-		// Run the read pump (blocks until connection closes)
-		client.ReadPump()
+		h.hub.serve(c, clientID)
 	})
-}
-
-// GetHub returns the Hub instance.
-func (h *Handler) GetHub() *Hub {
-	return h.hub
 }
 
 // RegisterRoutes registers WebSocket routes to the Fiber app.
